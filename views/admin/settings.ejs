@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('../partials/head', { title }) %></head>
+<body>
+<%- include('../partials/header') %>
+
+<main class="container section" style="max-width:420px;">
+  <h1>Настройки</h1>
+  <%- include('_tabs', { active: 'settings' }) %>
+
+  <% if (saved) { %><div class="alert alert-ok">Пароль изменён.</div><% } %>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+  <% if (typeof visitsToday !== 'undefined' && admin.role === 'owner') { %>
+  <h2>Посещения сайта</h2>
+  <div class="profile-stats" style="margin-bottom:22px;">
+    <div><b><%= visitsToday %></b><span>сегодня</span></div>
+    <div><b><%= visitsMonth %></b><span>за месяц</span></div>
+  </div>
+  <% } %>
+
+  <h2>Сменить пароль</h2>
+  <form method="post" action="/admin/settings/password" class="form-panel">
+    <div class="field"><label>Текущий пароль</label><input type="password" name="current_password" required></div>
+    <div class="field"><label>Новый пароль (минимум 6 символов)</label><input type="password" name="new_password" required minlength="6"></div>
+    <button class="btn btn-primary btn-block" type="submit">Сохранить</button>
+  </form>
+
+  <% if (admin.role === 'owner') { %>
+  <h2 style="margin-top:28px;">Резервная копия</h2>
+  <p class="hint">База данных и все загруженные файлы (обложки, скриншоты, архивы модов, картинки багов) одним архивом — пригодится при переезде на другой хостинг: просто распакуйте его в корень проекта на новом месте той же структурой папок.</p>
+  <a class="btn btn-ghost btn-block" href="/admin/backup">⬇ Скачать резервную копию (.zip)</a>
+
+  <h2 style="margin-top:28px;">Восстановить из копии</h2>
+  <% if (restored) { %>
+    <div class="alert alert-ok">
+      Восстановлено<%= restored.db ? ': база данных' : '' %><%= restored.files ? ` + файлов: ${restored.files}` : '' %>.
+      <% if (restored.db) { %><br>Сервер сразу переключился на восстановленные данные — перезапускать ничего не нужно.<% } %>
+      <% if (restored.statsRestored || restored.commentsRestored || restored.likesRestored) { %>
+        <br>Сохранена активность, накопленная уже после бэкапа: обновлены счётчики у <%= restored.statsRestored %> модов,
+        добавлено комментариев — <%= restored.commentsRestored %>, голосов-лайков — <%= restored.likesRestored %>.
+      <% } %>
+    </div>
+  <% } %>
+  <p class="hint">Загрузите архив, скачанный кнопкой выше — он заменит текущую базу и файлы. Всё, что сейчас на сайте, будет перезаписано, поэтому сначала скачайте свежую копию на всякий случай.</p>
+  <form method="post" action="/admin/restore" enctype="multipart/form-data" class="form-panel"
+        onsubmit="return confirm('Заменить текущие данные сайта содержимым архива? Отменить это будет нельзя.');">
+    <div class="field"><label>Файл резервной копии (.zip)</label><input type="file" name="backup" accept=".zip" required></div>
+    <button class="btn btn-danger btn-block" type="submit">Восстановить из копии</button>
+  </form>
+  <% } %>
+</main>
+
+<%- include('../partials/footer') %>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/header') %>
+
+<main class="container section" style="max-width:720px;">
+  <h1><%= mode === 'create' ? 'Опубликовать мод' : 'Редактировать: ' + mod.name %></h1>
+
+  <% if (typeof error !== 'undefined' && error) { %><div class="alert alert-error"><%= error %></div><% } %>
+  <% if (typeof saved !== 'undefined' || (typeof mode !== 'undefined' && mode === 'edit')) { %>
+    <% /* заглушка — фактическое сообщение об успехе показывает query-параметр ниже */ %>
+  <% } %>
+
+  <form method="post" action="<%= mode === 'create' ? '/mods' : '/mods/' + mod.id %>" enctype="multipart/form-data" class="form-panel">
+    <% if (mode === 'edit') { %><input type="hidden" name="code" value="<%= code %>"><% } %>
+
+    <div class="field">
+      <label>Название мода *</label>
+      <input type="text" name="name" required maxlength="80" value="<%= mode === 'edit' ? mod.name : (mod && mod.name) || '' %>">
+    </div>
+    <div class="field">
+      <label>Краткое описание (для карточки в каталоге)</label>
+      <input type="text" name="summary" maxlength="160" value="<%= mode === 'edit' ? (mod.summary||'') : '' %>">
+    </div>
+    <div class="field">
+      <label>Полное описание</label>
+      <textarea name="description" maxlength="6000"><%= mode === 'edit' ? (mod.description||'') : '' %></textarea>
+    </div>
+    <div class="field">
+      <label>Теги (через запятую)</label>
+      <input type="text" name="tags" placeholder="оружие, степь, кузница" value="<%= mode === 'edit' ? tags : '' %>">
+    </div>
+    <div class="field">
+      <label>Обложка (PNG/JPG/WEBP, до 5 МБ)</label>
+      <input type="file" name="cover" accept="image/png,image/jpeg,image/webp">
+      <% if (mode === 'edit' && mod.cover_path) { %><p class="hint">Сейчас: <img src="<%= mod.cover_path %>" style="max-width:120px;border-radius:4px;margin-top:6px;"></p><% } %>
+    </div>
+    <div class="field">
+      <label>Скриншоты (до 8 файлов)</label>
+      <input type="file" name="screenshots" accept="image/png,image/jpeg,image/webp" multiple>
+      <% if (mode === 'edit' && screenshots && screenshots.length) { %>
+        <div class="gallery" style="margin-top:8px;"><% screenshots.forEach(s => { %><img src="<%= s.path %>"><% }) %></div>
+      <% } %>
+    </div>
+
+    <% if (mode === 'create') { %>
+      <div class="field">
+        <label>Файл мода (.zip) *</label>
+        <input type="file" name="archive" accept=".zip" required>
+      </div>
+      <div class="field">
+        <label>Версия</label>
+        <input type="text" name="version" placeholder="1.0" value="1.0">
+      </div>
+      <div class="field">
+        <label>Список изменений</label>
+        <textarea name="changelog" placeholder="Первая публикация."></textarea>
+      </div>
+      <p class="hint">После отправки мод уйдёт на проверку администрации и появится в общем каталоге только после одобрения. Сразу после публикации вы получите код управления — сохраните его, он не восстанавливается.</p>
+    <% } %>
+
+    <button class="btn btn-primary btn-block" type="submit"><%= mode === 'create' ? 'Опубликовать (на проверку)' : 'Сохранить изменения' %></button>
+  </form>
+
+  <% if (mode === 'edit') { %>
+    <h2 style="margin-top:32px;">Новая версия</h2>
+    <form method="post" action="/mods/<%= mod.id %>/versions" enctype="multipart/form-data" class="form-panel">
+      <input type="hidden" name="code" value="<%= code %>">
+      <div class="field"><label>Версия *</label><input type="text" name="version" required placeholder="1.1"></div>
+      <div class="field"><label>Список изменений</label><textarea name="changelog" placeholder="Что изменилось в этой версии"></textarea></div>
+      <div class="field"><label>Файл (.zip) *</label><input type="file" name="archive" accept=".zip" required></div>
+      <p class="hint">Новая версия тоже проходит проверку модераторами, даже если сам мод уже одобрен.</p>
+      <button class="btn btn-violet btn-block" type="submit">Отправить новую версию</button>
+    </form>
+
+    <% if (versions && versions.length) { %>
+      <h2 style="margin-top:32px;">Версии</h2>
+      <% versions.forEach(v => { %>
+        <div class="version-item">
+          <div class="vh"><b><%= v.version_label %></b><span class="badge badge-<%= v.status %>"><%= v.status %></span></div>
+        </div>
+      <% }) %>
+    <% } %>
+
+    <h2 style="margin-top:32px;color:var(--danger);">Опасная зона</h2>
+    <form method="post" action="/mods/<%= mod.id %>/delete" class="form-panel" onsubmit="return confirm('Удалить мод навсегда? Это нельзя отменить.');">
+      <input type="hidden" name="code" value="<%= code %>">
+      <button class="btn btn-danger btn-block" type="submit">Удалить мод</button>
+    </form>
+  <% } %>
+</main>
+
+<%- include('partials/footer') %>
+</body>
+</html>

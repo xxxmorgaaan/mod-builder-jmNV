@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/header') %>
+
+<main class="container section" style="max-width:600px;">
+  <h1>Сообщить о баге</h1>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+  <form method="post" action="/bugs" enctype="multipart/form-data" class="form-panel">
+    <div class="field">
+      <label>Что сломалось? *</label>
+      <input type="text" name="title" required maxlength="140" placeholder="Например: крашится при открытии инвентаря">
+    </div>
+    <div class="field">
+      <label>Подробности</label>
+      <textarea name="description" maxlength="4000" placeholder="Что делали, что ожидали увидеть, что увидели на самом деле. Версия игры и мода, если ставили моды."></textarea>
+    </div>
+    <div class="field">
+      <label>Скриншоты (до 5 штук)</label>
+      <input type="file" name="screenshots" accept="image/png,image/jpeg,image/webp" multiple>
+    </div>
+    <div class="field">
+      <label>Имя</label>
+      <input type="text" name="reporter_name" maxlength="40" placeholder="Гость">
+    </div>
+    <button class="btn btn-primary btn-block" type="submit">Отправить</button>
+  </form>
+</main>
+
+<%- include('partials/footer') %>
+</body>
+</html>
