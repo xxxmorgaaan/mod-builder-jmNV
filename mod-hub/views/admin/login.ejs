@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('../partials/head', { title }) %></head>
+<body>
+<%- include('../partials/header') %>
+
+<main class="container section" style="max-width:400px;">
+  <h1>Вход в админку</h1>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+  <form method="post" action="/admin/login" class="form-panel">
+    <div class="field"><label>Логин</label><input type="text" name="username" required autofocus></div>
+    <div class="field"><label>Пароль</label><input type="password" name="password" required></div>
+    <button class="btn btn-primary btn-block" type="submit">Войти</button>
+  </form>
+</main>
+
+<%- include('../partials/footer') %>
+</body>
+</html>

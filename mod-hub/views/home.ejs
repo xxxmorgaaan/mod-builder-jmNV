@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/header') %>
+
+<section class="hero">
+  <div class="container">
+    <h1>Моды для <%= game.name %></h1>
+    <p class="lead">Собирайте новое оружие, одежду и технологии для степной колонии, публикуйте готовое
+      и качайте моды других игроков — всё в одном месте.</p>
+
+    <div class="entry-cards">
+      <% if (builderEnabled) { %>
+      <a class="entry-card" href="/builder/">
+        <span class="ec-icon">⚒</span>
+        <h3>Собрать мод</h3>
+        <p>Конструктор: заполняете название — остальное подставляется само. Готовый архив сразу можно опубликовать здесь же.</p>
+      </a>
+      <% } %>
+      <a class="entry-card is-violet" href="/mods/new">
+        <span class="ec-icon">⬆</span>
+        <h3>Опубликовать готовый мод</h3>
+        <p>Уже есть <code>.zip</code>? Загрузите его, добавьте скриншоты и описание — после проверки модераторами мод появится в каталоге.</p>
+      </a>
+      <a class="entry-card" href="/games/<%= game.slug %>">
+        <span class="ec-icon">🗺</span>
+        <h3>Все моды Alem Colony</h3>
+        <p>Каталог с поиском, тегами и сортировкой — <%= modCount %> мод(ов) уже опубликовано.</p>
+      </a>
+    </div>
+
+    <div class="hero-stats">
+      <div><%= modCount %><span>модов в каталоге</span></div>
+    </div>
+  </div>
+</section>
+
+<% if (featured.length) { %>
+<section class="section container">
+  <div class="section-head">
+    <h2>🔥 Популярное</h2>
+    <a href="/games/<%= game.slug %>?sort=likes">Всё популярное →</a>
+  </div>
+  <div class="mod-grid">
+    <% featured.forEach(mod => { %>
+      <%- include('partials/mod-card', { mod }) %>
+    <% }) %>
+  </div>
+</section>
+<% } %>
+
+<% if (recent.length) { %>
+<section class="section container">
+  <div class="section-head">
+    <h2>🆕 Недавно опубликовано</h2>
+    <a href="/games/<%= game.slug %>?sort=new">Всё новое →</a>
+  </div>
+  <div class="mod-grid">
+    <% recent.forEach(mod => { %>
+      <%- include('partials/mod-card', { mod }) %>
+    <% }) %>
+  </div>
+</section>
+<% } %>
+
+<% if (!recent.length) { %>
+<section class="section container">
+  <div class="empty-state">
+    <p>Пока в каталоге пусто — будьте первым, кто опубликует мод для Alem Colony.</p>
+    <a href="/mods/new" class="btn btn-primary">Опубликовать мод</a>
+  </div>
+</section>
+<% } %>
+
+<%- include('partials/footer') %>
+</body>
+</html>

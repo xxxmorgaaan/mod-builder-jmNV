@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/header') %>
+
+<main class="container section">
+  <div class="profile-card">
+    <% if (profileUser.avatar_path) { %>
+      <img class="avatar avatar-lg" src="<%= profileUser.avatar_path %>" alt="">
+    <% } else { %>
+      <span class="avatar avatar-lg avatar-letter"><%= profileUser.username.trim().charAt(0).toUpperCase() %></span>
+    <% } %>
+    <div class="profile-card-body">
+      <b style="font-size:18px;"><%= profileUser.username %></b>
+      <p class="hint">На сайте с <%= profileUser.created_at.slice(0, 10) %></p>
+      <div class="profile-stats">
+        <div><b><%= stats.mods_count %></b><span>модов</span></div>
+        <div><b><%= stats.downloads_sum %></b><span>скачиваний</span></div>
+        <div><b><%= stats.likes_sum %></b><span>лайков</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Моды (<%= mods.length %>)</h2>
+  <% if (!mods.length) { %>
+    <p class="hint">Пока ничего не опубликовано.</p>
+  <% } else { %>
+    <div class="mod-grid" style="margin-bottom:28px;">
+      <% mods.forEach(mod => { %><%- include('partials/mod-card', { mod }) %><% }) %>
+    </div>
+  <% } %>
+</main>
+
+<%- include('partials/footer') %>
+</body>
+</html>
