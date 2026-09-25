@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('../partials/head', { title }) %></head>
+<body>
+<%- include('../partials/header') %>
+
+<main class="container section">
+  <h1>Все сборки</h1>
+  <%- include('_tabs', { active: 'bundles' }) %>
+
+  <p class="hint">Столбец «Код» — код управления, выданный при публикации сборки. Забыли — скопируйте и пришлите автору.</p>
+  <div style="margin-bottom:14px;"><a class="btn btn-ghost btn-sm" href="/admin/bundles/export.csv">⬇ Экспорт в CSV</a></div>
+
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Название</th><th>Статус</th><th>Код управления</th><th>Лайков</th><th>Создана</th><th>Действия</th></tr></thead>
+      <tbody>
+        <% bundles.forEach(b => { %>
+        <tr>
+          <td><a href="/bundles/<%= b.public_id %>" target="_blank"><%= b.name %></a></td>
+          <td><span class="badge badge-<%= b.status %>"><%= b.status %></span></td>
+          <td>
+            <% if (b.controlCode) { %>
+              <code class="code-pill" data-copy="<%= b.controlCode %>" title="Нажмите, чтобы скопировать"><%= b.controlCode %></code>
+            <% } else { %>
+              <span class="hint">не удалось расшифровать</span>
+            <% } %>
+          </td>
+          <td><%= b.likes %></td>
+          <td><%= b.created_at %></td>
+          <td class="row-actions">
+            <form method="post" action="/admin/bundles/<%= b.public_id %>/visibility"><button class="btn btn-ghost btn-sm" type="submit"><%= b.status === 'hidden' ? 'Вернуть в витрину' : 'Скрыть' %></button></form>
+            <form method="post" action="/admin/bundles/<%= b.public_id %>/delete" onsubmit="return confirm('Удалить сборку навсегда?');"><button class="btn btn-danger btn-sm" type="submit">Удалить</button></form>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+document.querySelectorAll('[data-copy]').forEach(function(el){
+  el.addEventListener('click', function(){
+    navigator.clipboard.writeText(el.dataset.copy).then(function(){
+      var old = el.textContent;
+      el.textContent = 'Скопировано!';
+      setTimeout(function(){ el.textContent = old; }, 1200);
+    });
+  });
+});
+</script>
+<%- include('../partials/footer') %>
+</body>
+</html>

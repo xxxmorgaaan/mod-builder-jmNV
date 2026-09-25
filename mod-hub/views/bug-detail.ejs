@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/header') %>
+
+<main class="container section" style="max-width:760px;">
+  <p class="hint"><a href="/bugs">← все баг-репорты</a></p>
+
+  <div class="stat-row" style="margin-top:0;">
+    <span class="badge badge-bug-<%= bug.status %>"><%=
+      ({open:'открыт', in_progress:'в работе', resolved:'решён', wontfix:'не будем чинить'})[bug.status] %></span>
+  </div>
+  <h1><%= bug.title %></h1>
+  <p class="hint">от <%= bug.reporter_name %> · <%= bug.created_at %></p>
+
+  <% if (bug.description) { %>
+    <p style="white-space:pre-wrap;color:var(--text-dim);margin-top:16px;"><%= bug.description %></p>
+  <% } %>
+
+  <% if (screenshots.length) { %>
+  <div class="gallery" style="margin-top:16px;">
+    <% screenshots.forEach(s => { %><img src="<%= s.path %>" data-full="<%= s.path %>" alt="Скриншот"><% }) %>
+  </div>
+  <% } %>
+
+  <div class="stat-row">
+    <button type="button" class="btn btn-ghost like-btn <%= voted ? 'is-liked' : '' %>" data-like-url="/bugs/<%= bug.id %>/vote">
+      ♥ <span class="like-count"><%= bug.votes %></span>
+    </button>
+  </div>
+
+  <section style="margin-top:32px;">
+    <h2>Обсуждение (<%= comments.length %>)</h2>
+    <form method="post" action="/bugs/<%= bug.id %>/comments" class="form-panel" style="margin-bottom:16px;">
+      <div class="field"><label>Имя</label><input type="text" name="author_name" maxlength="40" placeholder="Гость"></div>
+      <div class="field"><label>Комментарий</label><textarea name="body" maxlength="2000" required></textarea></div>
+      <button class="btn btn-primary" type="submit">Отправить</button>
+    </form>
+    <% comments.forEach(c => { %>
+      <div class="comment">
+        <span class="author"><%= c.author_name %></span> · <span class="when"><%= c.created_at %></span>
+        <p><%= c.body %></p>
+      </div>
+    <% }) %>
+  </section>
+</main>
+
+<%- include('partials/footer') %>
+</body>
+</html>
