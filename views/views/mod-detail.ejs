@@ -131,12 +131,6 @@
         <p><%= c.body %></p>
         <div class="comment-actions">
           <a href="/report/comment/<%= c.id %>">⚠ Пожаловаться</a>
-          <% if (c.canDelete) { %>
-            <form method="post" action="/mods/<%= mod.id %>/comments/<%= c.id %>/delete" onsubmit="return confirm('Удалить этот комментарий?');" style="display:inline;">
-              <% if (code) { %><input type="hidden" name="code" value="<%= code %>"><% } %>
-              <button type="submit" class="is-danger">🗑 Удалить</button>
-            </form>
-          <% } %>
         </div>
       </div>
     <% }) %>
