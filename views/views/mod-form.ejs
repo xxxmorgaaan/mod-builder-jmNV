@@ -38,10 +38,8 @@
         <p class="hint" style="margin-top:8px;">Текущая обложка:</p>
         <div class="shot-thumb" style="width:160px;">
           <img src="<%= mod.cover_path %>" alt="">
-          <form method="post" action="/mods/<%= mod.id %>/cover/delete" onsubmit="return confirm('Удалить обложку?');">
-            <input type="hidden" name="code" value="<%= code %>">
-            <button type="submit" class="shot-remove" title="Удалить обложку">✕</button>
-          </form>
+          <button type="button" class="shot-remove js-delete-media" title="Удалить обложку"
+            data-url="/mods/<%= mod.id %>/cover/delete" data-confirm="Удалить обложку?">✕</button>
         </div>
       <% } %>
     </div>
@@ -54,10 +52,8 @@
           <% screenshots.forEach(s => { %>
             <div class="shot-thumb">
               <img src="<%= s.path %>" alt="">
-              <form method="post" action="/mods/<%= mod.id %>/screenshots/<%= s.id %>/delete" onsubmit="return confirm('Удалить этот скриншот?');">
-                <input type="hidden" name="code" value="<%= code %>">
-                <button type="submit" class="shot-remove" title="Удалить скриншот">✕</button>
-              </form>
+              <button type="button" class="shot-remove js-delete-media" title="Удалить скриншот"
+                data-url="/mods/<%= mod.id %>/screenshots/<%= s.id %>/delete" data-confirm="Удалить этот скриншот?">✕</button>
             </div>
           <% }) %>
         </div>
@@ -110,6 +106,26 @@
     </form>
   <% } %>
 </main>
+
+<% if (mode === 'edit') { %>
+<script>
+(function(){
+  var codeValue = <%- JSON.stringify(code) %>;
+  document.querySelectorAll('.js-delete-media').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      if (btn.dataset.confirm && !confirm(btn.dataset.confirm)) return;
+      btn.disabled = true;
+      fetch(btn.dataset.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'code=' + encodeURIComponent(codeValue),
+      }).then(function(){ location.reload(); })
+        .catch(function(){ alert('Не удалось удалить — попробуйте ещё раз.'); btn.disabled = false; });
+    });
+  });
+})();
+</script>
+<% } %>
 
 <%- include('partials/footer') %>
 </body>

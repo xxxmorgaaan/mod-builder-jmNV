@@ -5,6 +5,7 @@
   <a href="/admin/complaints" class="<%= active==='complaints'?'is-active':'' %>">Жалобы</a>
   <a href="/admin/bugs" class="<%= active==='bugs'?'is-active':'' %>">Баг-репорты</a>
   <a href="/admin/users" class="<%= active==='users'?'is-active':'' %>">Пользователи</a>
+  <a href="/admin/log" class="<%= active==='log'?'is-active':'' %>">Журнал</a>
   <% if (admin.role === 'owner') { %><a href="/admin/admins" class="<%= active==='admins'?'is-active':'' %>">Админы</a><% } %>
   <a href="/admin/settings" class="<%= active==='settings'?'is-active':'' %>">Настройки</a>
   <form method="post" action="/admin/logout" style="margin-left:auto;">

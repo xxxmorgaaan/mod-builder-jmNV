@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('../partials/head', { title }) %></head>
+<body>
+<%- include('../partials/header') %>
+
+<main class="container section">
+  <h1>Журнал действий</h1>
+  <%- include('_tabs', { active: 'log' }) %>
+
+  <p class="hint">Последние 200 действий модераторов и админов — кто, что и когда одобрил, отклонил, удалил или забанил.</p>
+
+  <% const actionLabels = {
+    approve_mod: '✅ Одобрил мод', reject_mod: '❌ Отклонил мод',
+    bulk_approve_mods: '✅ Массово одобрил моды', bulk_approve_versions: '✅ Массово одобрил версии',
+    approve_version: '✅ Одобрил версию', reject_version: '❌ Отклонил версию',
+    approve_bundle: '✅ Одобрил сборку', reject_bundle: '❌ Отклонил сборку',
+    hide_mod: '🙈 Скрыл мод', unhide_mod: '👁 Вернул мод из скрытых',
+    hide_bundle: '🙈 Скрыл сборку', unhide_bundle: '👁 Вернул сборку из скрытых',
+    delete_mod: '🗑 Удалил мод', delete_bundle: '🗑 Удалил сборку',
+    delete_via_complaint: '🗑 Удалил по жалобе', resolve_complaint: '✔ Закрыл жалобу',
+    ban_user: '⛔ Забанил аккаунт', unban_user: '✅ Разбанил аккаунт',
+    ban_ip: '⛔ Забанил IP', unban_ip: '✅ Разбанил IP',
+  }; %>
+
+  <% if (!entries.length) { %>
+    <p class="hint">Пока пусто.</p>
+  <% } else { %>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Когда</th><th>Кто</th><th>Действие</th><th>Объект</th><th>Детали</th></tr></thead>
+      <tbody>
+        <% entries.forEach(e => { %>
+        <tr>
+          <td class="hint"><%= e.created_at %></td>
+          <td><%= e.admin_name %></td>
+          <td><%= actionLabels[e.action] || e.action %></td>
+          <td><%= e.target || '—' %></td>
+          <td class="hint"><%= e.details ? (e.details.length > 80 ? e.details.slice(0, 80) + '…' : e.details) : '—' %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</main>
+
+<%- include('../partials/footer') %>
+</body>
+</html>

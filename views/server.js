@@ -10,6 +10,7 @@ const compression = require('compression');
 const { startAutoApproveSweep } = require('./src/auto-approve');
 const { startRestoreWatcher } = require('./src/restore-watcher');
 const { clientIp, moscowDateStr } = require('./src/helpers');
+const { isBanned: isIpBanned } = require('./src/ip-ban-cache');
 const db = require('./src/db');
 
 const app = express();
@@ -80,14 +81,17 @@ app.use((req, res, next) => {
 // ---------------------------------------------------------------- бан по IP
 // Стоит до статики и роутов: забаненный IP не должен видеть вообще ничего,
 // кроме страницы «доступ закрыт» — ни каталог, ни форму публикации.
+// Проверка — по кэшу в памяти (src/ip-ban-cache.js), а не SQL-запросом на
+// каждый запрос: это самый частый код на сайте, дёргать базу тут лишнее.
 app.use((req, res, next) => {
-  try {
-    const ip = clientIp(req);
-    if (ip) {
-      const banned = require('./src/db').prepare('SELECT reason FROM banned_ips WHERE ip = ?').get(ip);
-      if (banned) return res.status(403).render('banned', { title: 'Доступ закрыт', reason: banned.reason });
-    }
-  } catch (e) { /* база могла ещё не мигрировать — не повод ронять весь сайт */ }
+  const ip = clientIp(req);
+  if (ip && isIpBanned(ip)) {
+    const reason = (() => {
+      try { return db.prepare('SELECT reason FROM banned_ips WHERE ip = ?').get(ip)?.reason; }
+      catch (e) { return null; }
+    })();
+    return res.status(403).render('banned', { title: 'Доступ закрыт', reason });
+  }
   next();
 });
 

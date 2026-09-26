@@ -10,48 +10,51 @@
 
   <h2>Новые моды на проверке (<%= pendingMods.length %>)</h2>
   <% if (!pendingMods.length) { %><p class="hint">Пусто.</p><% } %>
-  <% pendingMods.forEach(m => { %>
-    <div class="mod-review-card">
-      <div class="vh" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center;">
-        <div><b><%= m.name %></b> — <a href="/mods/<%= m.id %>" target="_blank">открыть превью</a> · <a href="/admin/mods/<%= m.id %>/inspect">🔍 Посмотреть файлы</a><br><span class="hint"><%= m.summary %></span>
-          <% if (m.scan_note) { %><br><span class="badge badge-approved">✓ автопроверка пройдена</span><% } %></div>
-        <div class="row-actions">
-          <form method="post" action="/admin/mods/<%= m.id %>/approve"><button class="btn btn-primary btn-sm" type="submit">Одобрить</button></form>
-          <form method="post" action="/admin/mods/<%= m.id %>/reject" onsubmit="return promptNote(this)"><input type="hidden" name="note" class="note-input"><button class="btn btn-danger btn-sm" type="submit">Отклонить</button></form>
+  <% if (pendingMods.length) { %>
+  <form method="post" action="/admin/mods/bulk-approve" id="modsForm">
+    <input type="hidden" name="note" class="note-input">
+    <% pendingMods.forEach(m => { %>
+      <div class="mod-review-card">
+        <div class="vh" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:flex-start;">
+          <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;">
+            <input type="checkbox" name="ids" value="<%= m.id %>" style="margin-top:4px;">
+            <span><b><%= m.name %></b> — <a href="/mods/<%= m.id %>" target="_blank">открыть превью</a> · <a href="/admin/mods/<%= m.id %>/inspect">🔍 Посмотреть файлы</a><br><span class="hint"><%= m.summary %></span>
+              <% if (m.scan_note) { %><br><span class="badge badge-approved">✓ автопроверка пройдена</span><% } %></span>
+          </label>
+          <div class="row-actions">
+            <button class="btn btn-primary btn-sm" type="submit" formaction="/admin/mods/<%= m.id %>/approve" formnovalidate>Одобрить</button>
+            <button class="btn btn-danger btn-sm" type="submit" formaction="/admin/mods/<%= m.id %>/reject" formnovalidate onclick="return promptNote(this.form);">Отклонить</button>
+          </div>
         </div>
       </div>
-    </div>
-  <% }) %>
+    <% }) %>
+    <button class="btn btn-primary" type="submit" style="margin-top:10px;" onclick="return confirm('Одобрить все отмеченные моды разом?');">✅ Одобрить отмеченные</button>
+  </form>
+  <% } %>
 
   <h2 style="margin-top:28px;">Новые версии на проверке (<%= pendingVersions.length %>)</h2>
   <% if (!pendingVersions.length) { %><p class="hint">Пусто.</p><% } %>
-  <% pendingVersions.forEach(v => { %>
-    <div class="mod-review-card">
-      <div class="vh" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center;">
-        <div><b><%= v.mod_name %></b> → версия <b><%= v.version_label %></b> (<%= humanSize(v.file_size) %>) · <a href="/admin/mods/<%= v.mod_id %>/inspect?version=<%= v.id %>">🔍 Посмотреть файлы</a><br>
-          <span class="hint"><%= v.changelog %></span>
-          <% if (v.scan_note) { %><br><span class="badge badge-approved">✓ автопроверка пройдена</span><% } %></div>
-        <div class="row-actions">
-          <form method="post" action="/admin/mod-versions/<%= v.id %>/approve"><button class="btn btn-primary btn-sm" type="submit">Одобрить</button></form>
-          <form method="post" action="/admin/mod-versions/<%= v.id %>/reject"><button class="btn btn-danger btn-sm" type="submit">Отклонить</button></form>
+  <% if (pendingVersions.length) { %>
+  <form method="post" action="/admin/mod-versions/bulk-approve" id="versionsForm">
+    <% pendingVersions.forEach(v => { %>
+      <div class="mod-review-card">
+        <div class="vh" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:flex-start;">
+          <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;">
+            <input type="checkbox" name="ids" value="<%= v.id %>" style="margin-top:4px;">
+            <span><b><%= v.mod_name %></b> → версия <b><%= v.version_label %></b> (<%= humanSize(v.file_size) %>) · <a href="/admin/mods/<%= v.mod_id %>/inspect?version=<%= v.id %>">🔍 Посмотреть файлы</a><br>
+              <span class="hint"><%= v.changelog %></span>
+              <% if (v.scan_note) { %><br><span class="badge badge-approved">✓ автопроверка пройдена</span><% } %></span>
+          </label>
+          <div class="row-actions">
+            <button class="btn btn-primary btn-sm" type="submit" formaction="/admin/mod-versions/<%= v.id %>/approve" formnovalidate>Одобрить</button>
+            <button class="btn btn-danger btn-sm" type="submit" formaction="/admin/mod-versions/<%= v.id %>/reject" formnovalidate>Отклонить</button>
+          </div>
         </div>
       </div>
-    </div>
-  <% }) %>
-
-  <h2 style="margin-top:28px;">Сборки на проверке (<%= pendingBundles.length %>)</h2>
-  <% if (!pendingBundles.length) { %><p class="hint">Пусто.</p><% } %>
-  <% pendingBundles.forEach(b => { %>
-    <div class="mod-review-card">
-      <div class="vh" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center;">
-        <div><b><%= b.name %></b> — <a href="/bundles/<%= b.public_id %>" target="_blank">открыть превью</a></div>
-        <div class="row-actions">
-          <form method="post" action="/admin/bundles/<%= b.public_id %>/approve"><button class="btn btn-primary btn-sm" type="submit">Одобрить</button></form>
-          <form method="post" action="/admin/bundles/<%= b.public_id %>/reject"><button class="btn btn-danger btn-sm" type="submit">Отклонить</button></form>
-        </div>
-      </div>
-    </div>
-  <% }) %>
+    <% }) %>
+    <button class="btn btn-primary" type="submit" style="margin-top:10px;" onclick="return confirm('Одобрить все отмеченные версии разом?');">✅ Одобрить отмеченные</button>
+  </form>
+  <% } %>
 </main>
 
 <script>

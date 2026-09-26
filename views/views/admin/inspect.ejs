@@ -30,6 +30,7 @@
           <li>
             <button type="button" class="inspect-file-btn" data-kind="<%= e.kind %>"
               data-url="/admin/mods/<%= mod.id %>/inspect/file?version=<%= version.id %>&path=<%= encodeURIComponent(e.path) %>"
+              <% if (e.path.toLowerCase().endsWith('.lua')) { %>data-lint-url="/admin/mods/<%= mod.id %>/inspect/lint-lua?version=<%= version.id %>&path=<%= encodeURIComponent(e.path) %>"<% } %>
               data-name="<%= e.path %>">
               <%= e.kind === 'image' ? '🖼' : (e.kind === 'text' ? '📄' : '📦') %> <%= e.path %>
             </button>
@@ -63,12 +64,45 @@
       } else if (kind === 'text') {
         preview.innerHTML = '<p class="hint">Загрузка…</p>';
         fetch(url).then(function(r){ return r.text(); }).then(function(text){
+          var wrap = document.createElement('div');
+          var lintUrl = btn.dataset.lintUrl;
+          if (lintUrl) {
+            var lintBar = document.createElement('div');
+            lintBar.className = 'lint-bar';
+            var lintBtn = document.createElement('button');
+            lintBtn.type = 'button';
+            lintBtn.className = 'btn btn-ghost btn-sm';
+            lintBtn.textContent = '🔍 Проверить синтаксис Lua';
+            var lintResult = document.createElement('span');
+            lintResult.className = 'hint';
+            lintResult.style.marginLeft = '10px';
+            lintBtn.addEventListener('click', function(){
+              lintResult.textContent = 'Проверяю…';
+              lintResult.className = 'hint';
+              fetch(lintUrl).then(function(r){ return r.json(); }).then(function(data){
+                if (data.ok) {
+                  lintResult.textContent = '✅ Синтаксис в порядке.';
+                  lintResult.className = 'lint-ok';
+                } else {
+                  lintResult.textContent = '❌ ' + (data.line ? 'Строка ' + data.line + ': ' : '') + data.error;
+                  lintResult.className = 'lint-error';
+                }
+              }).catch(function(){
+                lintResult.textContent = '❌ Не удалось выполнить проверку.';
+                lintResult.className = 'lint-error';
+              });
+            });
+            lintBar.appendChild(lintBtn);
+            lintBar.appendChild(lintResult);
+            wrap.appendChild(lintBar);
+          }
           var pre = document.createElement('pre');
           pre.className = 'preview-code';
           try { pre.textContent = JSON.stringify(JSON.parse(text), null, 2); }
           catch (e) { pre.textContent = text; }
+          wrap.appendChild(pre);
           preview.innerHTML = '';
-          preview.appendChild(pre);
+          preview.appendChild(wrap);
         }).catch(function(){ preview.innerHTML = '<p class="hint">Не удалось загрузить файл.</p>'; });
       } else {
         preview.innerHTML = '<p class="hint">' + name + ' — этот тип файла не показывается напрямую, скачайте архив целиком, если нужно посмотреть.</p>';
