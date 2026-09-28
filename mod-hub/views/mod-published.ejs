@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/header') %>
+
+<main class="container section" style="max-width:640px;">
+  <h1>✅ <%= typeof isBundle !== 'undefined' && isBundle ? 'Сборка' : 'Мод' %> отправлен(а) на модерацию</h1>
+  <p>«<b><%= mod.name %></b>» появится в общем каталоге, как только администратор проверит и одобрит публикацию (или автоматически, если это включено).</p>
+
+  <div class="code-alert">
+    <h2>⚠ Сохраните код управления — без него доступ не восстановить</h2>
+    <p>Он нужен для редактирования, публикации новых версий и удаления. Мы сохранили его в этом браузере автоматически — но браузер можно почистить или сменить телефон, поэтому сохраните его отдельно прямо сейчас: скриншотом, файлом или просто скопируйте в заметки.</p>
+    <% if (typeof loggedIn !== 'undefined' && loggedIn) { %>
+      <p class="hint">Вы вошли в аккаунт — эта публикация уже привязана к нему и всегда доступна в <a href="/account">Личном кабинете</a> без кода. Но сохранить код всё равно стоит — на случай, если забудете пароль.</p>
+    <% } %>
+    <div class="control-code-box" data-remember-code="<%= code %>" data-remember-name="<%= mod.name %>" id="codeBox"><%= code %></div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+      <button type="button" class="btn btn-ghost btn-sm" id="btnCopyCode">📋 Скопировать</button>
+      <a class="btn btn-ghost btn-sm" id="btnDownloadCode" download="<%= (mod.slug || mod.id) %>-код-управления.txt">⬇ Скачать файлом</a>
+    </div>
+
+    <div class="field" style="margin-top:18px;">
+      <label for="codeConfirm">Чтобы продолжить — вставьте код ещё раз сюда (так вы точно его скопировали)</label>
+      <input type="text" id="codeConfirm" autocomplete="off" placeholder="Вставьте код из рамки выше">
+      <p class="hint" id="codeConfirmHint"></p>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;">
+    <a class="btn btn-primary is-disabled" id="btnManageNow" href="/<%= typeof isBundle !== 'undefined' && isBundle ? 'bundles' : 'mods' %>/<%= mod.slug || mod.id %>/edit?code=<%= encodeURIComponent(code) %>">Управлять сейчас</a>
+    <a class="btn btn-ghost is-disabled" id="btnHome" href="/">На главную</a>
+  </div>
+</main>
+
+<script>
+(function () {
+  var realCode = <%- JSON.stringify(code) %>;
+  var input = document.getElementById('codeConfirm');
+  var hint = document.getElementById('codeConfirmHint');
+  var manageBtn = document.getElementById('btnManageNow');
+  var homeBtn = document.getElementById('btnHome');
+  var confirmed = false;
+
+  function setEnabled(on) {
+    confirmed = on;
+    [manageBtn, homeBtn].forEach(function (btn) {
+      btn.classList.toggle('is-disabled', !on);
+      if (!on) btn.setAttribute('aria-disabled', 'true'); else btn.removeAttribute('aria-disabled');
+    });
+  }
+  setEnabled(false);
+
+  [manageBtn, homeBtn].forEach(function (btn) {
+    btn.addEventListener('click', function (e) { if (!confirmed) e.preventDefault(); });
+  });
+
+  input.addEventListener('input', function () {
+    if (input.value.trim() === realCode) {
+      setEnabled(true);
+      hint.textContent = '✓ Код совпадает — можно идти дальше.';
+      hint.style.color = 'var(--ok)';
+    } else {
+      setEnabled(false);
+      hint.textContent = input.value ? 'Пока не совпадает — проверьте, скопировали полностью.' : '';
+      hint.style.color = 'var(--text-faint)';
+    }
+  });
+
+  var copyBtn = document.getElementById('btnCopyCode');
+  copyBtn.addEventListener('click', function () {
+    navigator.clipboard.writeText(realCode).then(function () {
+      var old = copyBtn.textContent;
+      copyBtn.textContent = '✓ Скопировано';
+      setTimeout(function () { copyBtn.textContent = old; }, 1500);
+    });
+  });
+
+  var dlBtn = document.getElementById('btnDownloadCode');
+  dlBtn.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(
+    'Код управления для «<%= mod.name %>» на Alem Mod:\n\n' + realCode + '\n\nСохраните этот файл — без кода редактировать или удалить публикацию нельзя.'
+  );
+
+  window.addEventListener('beforeunload', function (e) {
+    if (confirmed) return;
+    e.preventDefault();
+    e.returnValue = '';
+  });
+})();
+</script>
+
+<%- include('partials/footer') %>
+</body>
+</html>

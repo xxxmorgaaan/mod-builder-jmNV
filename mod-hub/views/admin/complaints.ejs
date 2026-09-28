@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('../partials/head', { title }) %></head>
+<body>
+<%- include('../partials/header') %>
+
+<main class="container section">
+  <h1>Жалобы</h1>
+  <%- include('_tabs', { active: 'complaints' }) %>
+
+  <% if (!complaints.length) { %>
+    <p class="hint">Обращений пока нет.</p>
+  <% } else { %>
+  <div style="display:grid;grid-template-columns:1fr;gap:20px;">
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>#</th><th>Тема</th><th>Статус</th><th>Последнее сообщение</th><th></th></tr></thead>
+        <tbody>
+          <% complaints.forEach(c => { %>
+          <tr style="<%= c.id === openId ? 'background:rgba(255,255,255,.03);' : '' %>">
+            <td>#<%= c.id %></td>
+            <td><%= c.target ? c.target.name : '(запись удалена)' %> <span class="hint">· <%= c.target_type %></span></td>
+            <td><span class="badge <%= c.status === 'open' ? 'badge-pending' : 'badge-approved' %>"><%= c.status %></span></td>
+            <td><%= c.lastMessage ? (c.lastMessage.sender === 'admin' ? '[вы] ' : '') + c.lastMessage.body.slice(0, 60) : '—' %></td>
+            <td><a class="btn btn-ghost btn-sm" href="/admin/complaints?open=<%= c.id %>">Открыть</a></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <% if (openId) { %>
+    <% const openComplaint = complaints.find(c => c.id === openId); %>
+    <div class="form-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+        <b>Обращение #<%= openId %> — <%= openComplaint && openComplaint.target ? openComplaint.target.name : '' %></b>
+        <div class="row-actions">
+          <form method="post" action="/admin/complaints/<%= openId %>/resolve"><button class="btn btn-ghost btn-sm" type="submit">✓ Решено</button></form>
+          <% if (openComplaint && openComplaint.target) { %>
+          <form method="post" action="/admin/complaints/<%= openId %>/delete-target" onsubmit="return confirm('Мгновенно удалить эту запись из каталога?');">
+            <button class="btn btn-danger btn-sm" type="submit">🗑 Удалить мод/сборку</button>
+          </form>
+          <% } %>
+        </div>
+      </div>
+      <div class="chat-messages" style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:5px;padding:10px;margin-bottom:10px;">
+        <% openMessages.forEach(m => { %><div class="chat-msg <%= m.sender %>"><%= m.body %></div><% }) %>
+      </div>
+      <form method="post" action="/admin/complaints/<%= openId %>/reply" class="chat-form" style="border:none;padding:0;">
+        <textarea name="body" placeholder="Ответить…" required></textarea>
+        <button class="btn btn-primary" type="submit">Отправить</button>
+      </form>
+    </div>
+    <% } %>
+  </div>
+  <% } %>
+</main>
+
+<%- include('../partials/footer') %>
+</body>
+</html>

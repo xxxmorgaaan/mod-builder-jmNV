@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('../partials/head', { title }) %></head>
+<body>
+<%- include('../partials/header') %>
+<main class="container section">
+  <div class="empty-state">
+    <h1><%= title %></h1>
+    <p>У вашей роли нет доступа к этому разделу.</p>
+    <a href="/admin/moderation" class="btn btn-primary">В админку</a>
+  </div>
+</main>
+<%- include('../partials/footer') %>
+</body>
+</html>

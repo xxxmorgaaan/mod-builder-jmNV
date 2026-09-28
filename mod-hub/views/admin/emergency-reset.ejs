@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('../partials/head', { title }) %></head>
+<body>
+<%- include('../partials/header') %>
+
+<main class="container section" style="max-width:440px;">
+  <h1>Восстановление доступа</h1>
+  <p class="hint">Работает сразу, без перезапуска сервера — задаёт логин и пароль владельца напрямую в базе.</p>
+
+  <% if (done) { %>
+    <div class="alert alert-ok">Готово. Новый логин: <b><%= done %></b> — входите с ним и только что заданным паролем.</div>
+    <p class="hint">Теперь уберите <code>RESET_TOKEN</code> из переменных окружения — иначе эта страница остаётся рабочей для всех, кто узнает токен.</p>
+    <a class="btn btn-primary" href="/admin.html">Войти</a>
+  <% } else { %>
+    <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+    <form method="post" action="/admin/emergency-reset" class="form-panel">
+      <div class="field">
+        <label>Токен</label>
+        <input type="password" name="token" required autofocus>
+        <p class="hint">Значение переменной окружения <code>RESET_TOKEN</code> — задайте её сами перед тем, как открывать эту страницу.</p>
+      </div>
+      <div class="field"><label>Новый логин</label><input type="text" name="username" required></div>
+      <div class="field"><label>Новый пароль (минимум 6 символов)</label><input type="password" name="password" required minlength="6"></div>
+      <button class="btn btn-primary btn-block" type="submit">Задать заново</button>
+    </form>
+  <% } %>
+</main>
+
+<%- include('../partials/footer') %>
+</body>
+</html>

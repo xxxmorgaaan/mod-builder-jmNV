@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/header') %>
+
+<main class="container section" style="max-width:560px;">
+  <h1>✅ Жалоба отправлена</h1>
+  <p>Администрация ответит в переписке. Ссылка на неё сохранена в этом браузере — но на всякий случай сохраните и сами:</p>
+  <div class="control-code-box" data-remember-code="<%= token %>" data-remember-name="жалоба #<%= complaintId %>"><%= token %></div>
+  <a class="btn btn-primary" style="margin-top:16px;" href="/complaints/<%= token %>">Открыть переписку</a>
+</main>
+
+<%- include('partials/footer') %>
+</body>
+</html>

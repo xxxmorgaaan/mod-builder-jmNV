@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/header') %>
+
+<main class="container section" style="max-width:640px;">
+  <h1>Переписка по жалобе</h1>
+  <p class="hint">Тема: «<%= target ? target.name : 'запись удалена' %>» · статус: <b><%= complaint.status %></b></p>
+
+  <div class="chat-box" data-complaint-token="<%= token %>">
+    <div class="chat-messages"></div>
+    <form class="chat-form">
+      <textarea placeholder="Написать сообщение…"></textarea>
+      <button class="btn btn-primary" type="submit">➤</button>
+    </form>
+  </div>
+  <p class="hint" style="margin-top:10px;">Обновляется автоматически каждые 7 секунд.</p>
+</main>
+
+<%- include('partials/footer') %>
+</body>
+</html>

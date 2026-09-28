@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/header') %>
+
+<main class="container section">
+  <div class="section-head">
+    <div>
+      <h2><%= collection.name %></h2>
+      <p class="hint">Подборка от <a href="/users/<%= collection.author_username %>"><%= collection.author_username %></a><% if (collection.description) { %> — <%= collection.description %><% } %></p>
+    </div>
+    <% if (isOwner) { %>
+      <form method="post" action="/collections/<%= collection.id %>/delete" onsubmit="return confirm('Удалить всю подборку? Сами моды не пострадают — удалится только список.');">
+        <button class="btn btn-ghost btn-sm is-danger" type="submit">🗑 Удалить подборку</button>
+      </form>
+    <% } %>
+  </div>
+
+  <% if (!mods.length) { %>
+    <p class="hint">Пока ни одного мода не добавлено.</p>
+  <% } else { %>
+    <div class="mod-grid">
+      <% mods.forEach(mod => { %>
+        <div style="position:relative;">
+          <%- include('partials/mod-card', { mod }) %>
+          <% if (isOwner) { %>
+            <form method="post" action="/collections/<%= collection.id %>/remove/<%= mod.id %>"
+              onsubmit="return confirm('Убрать этот мод из подборки?');" style="position:absolute;top:8px;right:8px;">
+              <button type="submit" class="shot-remove" title="Убрать из подборки">✕</button>
+            </form>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <% if (isOwner && myOtherMods.length) { %>
+    <h2 style="margin-top:28px;">Добавить мод в подборку</h2>
+    <form method="post" action="/collections/<%= collection.id %>/add" style="display:flex;gap:8px;max-width:420px;flex-wrap:wrap;">
+      <select name="mod_id" style="flex:1;min-width:200px;">
+        <% myOtherMods.forEach(m => { %><option value="<%= m.id %>"><%= m.name %></option><% }) %>
+      </select>
+      <button class="btn btn-primary btn-sm" type="submit">Добавить</button>
+    </form>
+  <% } %>
+</main>
+
+<%- include('partials/footer') %>
+</body>
+</html>
