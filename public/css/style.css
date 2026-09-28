@@ -68,8 +68,13 @@ p, li, h1, h2, h3, h4, .hint, .comment p, .chat-msg{ overflow-wrap: break-word; 
 .site-header{
   position: sticky; top: 0; z-index: 40;
   background: rgba(11,13,17,.92);
-  backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
+}
+/* blur вынесен в псевдоэлемент: backdrop-filter на самой шапке превращает её в
+   containing block для position:fixed и мобильное меню сжималось до 60px. */
+.site-header::before{
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
 }
 .site-header .container{
   display: flex; align-items: center; justify-content: space-between;
@@ -482,12 +487,12 @@ tr:hover td{ background: rgba(255,255,255,.02); }
   }
   .site-nav a{
     border: none; background: transparent; padding: 8px 10px; font-size: 13.5px;
-    border-radius: 5px; gap: 6px; font-weight: 600;
+    border-radius: 5px; gap: 6px; font-weight: 600; white-space: nowrap;
   }
   .site-nav a:hover{ background: var(--panel-2); text-decoration: none; }
   .site-nav a.nav-accent{ background: transparent; }
   .site-nav a.nav-accent:hover{ background: var(--panel-2); }
-  .site-nav .nav-sub{ display: none; }   /* подписи нужны только в мобильном меню */
+  .site-nav a .nav-sub{ display: none; }   /* подписи нужны только в мобильном меню (селектор не слабее базового) */
   .site-nav .nav-section{ display: none; }
   .site-nav a .nav-ico{ font-size: 14px; width: auto; }
   .entry-cards{ grid-template-columns: repeat(2, 1fr); }
@@ -547,3 +552,22 @@ td .code-pill{ white-space: normal; }
 /* Аддоны */
 .addon-note{ background: var(--panel-2); border: 1px solid var(--border-2); border-radius: var(--radius); padding: 8px 12px; font-size: 13px; margin: 0 0 12px; }
 .addon-badge{ margin: -4px 0 6px; font-size: 11.5px; color: var(--lime); }
+
+/* ---- Шапка на ПК: одна строка, без выезжающего текста ---- */
+@media (min-width: 900px){
+  .site-header .container{ gap: 16px; }
+  .brand{ flex-shrink: 0; white-space: nowrap; }
+  .site-nav{ flex-wrap: nowrap; min-width: 0; }
+  .site-nav a > span:last-child{ overflow-wrap: normal; }
+}
+@media (min-width: 900px) and (max-width: 1099px){
+  .site-nav a{ padding: 8px 7px; font-size: 13px; }
+  .site-nav a .nav-ico{ display: none; }
+}
+/* Мобильное меню — на весь экран под шапкой, крупнее и читаемее */
+@media (max-width: 899px){
+  .site-nav{ inset: 63px 0 0 0; height: auto; padding: 12px 14px calc(40px + env(safe-area-inset-bottom)); gap: 10px; }
+  .site-nav a{ padding: 18px 16px; font-size: 17px; }
+  .site-nav a .nav-sub{ font-size: 13px; }
+  .site-nav .nav-section{ font-size: 12px; }
+}

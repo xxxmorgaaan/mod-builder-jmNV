@@ -42,16 +42,13 @@ function attachSummary(mod) {
 // ---------------------------------------------------------------- главная
 router.get('/', (req, res) => {
   const game = getGameBySlug('alem-colony');
-  // «Популярное» — не просто у кого больше лайков (у старых модов их
-  // естественно накапливается больше), а по соотношению лайков к
-  // скачиваниям — так наверх попадают мод которые нравятся, а не только
-  // самые старые/скачиваемые. +5 в знаменателе — сглаживание, чтобы мод с
-  // 1 скачиванием и 1 лайком не обгонял по «100% рейтингу» реально
-  // популярные; минимум 3 скачивания — чтобы совсем свежие мода не
-  // попадали в топ на пустом месте.
+  // «Популярное» — по реальной популярности: скачивания + лайки (лайк весит
+  // как 5 скачиваний). Раньше сортировали по доле лайков к скачиваниям, из-за
+  // чего мод с 7 скачиваниями и 2 лайками обгонял мод с 67 скачиваниями и
+  // 7 лайками. Теперь чем больше и скачивают, и лайкают — тем выше.
   const featured = db.prepare(
-    `SELECT * FROM mods WHERE game_id = ? AND status = 'approved' AND parent_mod_id IS NULL AND downloads >= 3
-     ORDER BY (CAST(likes AS REAL) / (downloads + 5)) DESC, likes DESC LIMIT 6`
+    `SELECT * FROM mods WHERE game_id = ? AND status = 'approved' AND parent_mod_id IS NULL
+     ORDER BY (downloads + likes * 5) DESC, likes DESC, downloads DESC, created_at DESC LIMIT 6`
   ).all(game.id).map(attachSummary);
   const recent = db.prepare(
     `SELECT * FROM mods WHERE game_id = ? AND status = 'approved' AND parent_mod_id IS NULL ORDER BY created_at DESC LIMIT 6`
@@ -86,6 +83,7 @@ router.get('/games/:slug', (req, res) => {
     updated: 'm.updated_at DESC',
     downloads: 'm.downloads DESC',
     likes: 'm.likes DESC',
+    popular: '(m.downloads + m.likes * 5) DESC, m.likes DESC, m.downloads DESC',
     az: 'm.name COLLATE NOCASE ASC',
   };
 

@@ -27,7 +27,7 @@
   <% } %>
 
   <div class="sort-row" style="margin-bottom:18px;">
-    <% const sorts = [['new','Новые'],['updated','Обновлённые'],['downloads','По скачиваниям'],['likes','По лайкам'],['az','По алфавиту']]; %>
+    <% const sorts = [['popular','Популярные'],['new','Новые'],['updated','Обновлённые'],['downloads','По скачиваниям'],['likes','По лайкам'],['az','По алфавиту']]; %>
     <% sorts.forEach(([key,label]) => { %>
       <a class="tag-chip <%= sort===key?'is-active':'' %>" href="?sort=<%= key %><%= tag ? '&tag='+encodeURIComponent(tag) : '' %><%= q ? '&q='+encodeURIComponent(q) : '' %>"><%= label %></a>
     <% }) %>
