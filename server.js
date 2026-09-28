@@ -11,18 +11,19 @@ const { startAutoApproveSweep } = require('./src/auto-approve');
 const { startRestoreWatcher } = require('./src/restore-watcher');
 const { clientIp, moscowDateStr } = require('./src/helpers');
 const { isBanned: isIpBanned } = require('./src/ip-ban-cache');
+const { levelOf, ROLE_LABELS } = require('./src/auth');
 const db = require('./src/db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Метка версии кода — чтобы можно было проверить в логах (`pm2 logs mod-hub`
+// Метка версии кода — чтобы можно было проверить в логах (`pm2 logs alem-mod`
 // сразу после запуска) и на вкладке «Настройки» в админке, действительно ли
 // на сервере запущена та версия, которую вы только что задеплоили, а не
 // старая. Меняйте на что угодно понятное вам при каждом обновлении
 // (например, дату коммита) — это просто ориентир для сверки, а не что-то,
 // что как-то влияет на работу сайта.
-const BUILD_MARKER = '2026-09-26: комментарии только через жалобу, редакт. модов по коду/аккаунту, теги в админке, фикс редиректов модерации';
+const BUILD_MARKER = '2026-09-27: аддоны к модам, лимит скачивания раз в 2 мин, роли админов (владелец/ст.админ/админ/модер), подборки, журнал с фильтрами, без конструктора';
 
 // За реверс-прокси (Railway и почти любой другой хостинг) req.ip без этого
 // всегда равен адресу самого прокси — тогда бан по IP банил бы всех разом.
@@ -58,9 +59,6 @@ app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'), {
 }));
 
 // ---------------------------------------------------------------- locals для всех шаблонов
-// Идёт ДО любых мест, где может отрендериться страница (включая 404 у
-// охранника /builder ниже) — иначе шаблон шапки упадёт на неопределённых
-// переменных.
 app.use((req, res, next) => {
   res.locals.siteAuthorName = process.env.SITE_AUTHOR_NAME || 'МОРГАН';
   res.locals.siteAuthorTelegram = process.env.SITE_AUTHOR_TELEGRAM || '@Xxmorgaan';
@@ -76,10 +74,13 @@ app.use((req, res, next) => {
     } catch (e) { /* база могла ещё не мигрировать — не повод ронять страницу */ }
   }
   res.locals.isOwner = !!(req.session && req.session.admin && req.session.admin.role === 'owner');
-  // Баг-трекер и конструктор модов — только для владельца: и сам раздел, и
-  // ссылки на него в шапке/подвале показываются только ему.
-  res.locals.bugsEnabled = res.locals.isOwner;   // баг-трекер — только владельцу
-  res.locals.builderEnabled = true;              // конструктор модов — всем
+  // Уровень роли админа (0 — не админ): 1 модер, 2 админ, 3 старший админ, 4 владелец.
+  res.locals.adminLevel = levelOf(req.session && req.session.admin && req.session.admin.role);
+  res.locals.roleLabel = ROLE_LABELS[req.session && req.session.admin && req.session.admin.role] || '';
+  // Баг-трекер — только для владельца: и сам раздел, и ссылка на него в
+  // шапке показывается только ему. Конструктор модов убран с сайта совсем
+  // (был по /builder/ — удалён и код, и ссылки на него).
+  res.locals.bugsEnabled = res.locals.adminLevel >= 3;
   // Рекламный блок РСЯ в подвале — показывается, только если задан id блока.
   res.locals.yandexAdBlockId = (process.env.YANDEX_AD_BLOCK_ID || '').trim();
   res.locals.telegramBotUsername = (process.env.TELEGRAM_BOT_USERNAME || '').trim();
@@ -104,6 +105,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// Конструктор модов убран с сайта — раньше лежал в public/builder и
+// раздавался как обычная статика; сами файлы удалены, но на случай, если
+// где-то в кэше/закладках осталась старая ссылка — явно отдаём 404, а не
+// молча служим что попало (и не полагаемся только на то, что файлов больше
+// нет: та же ошибка уже была со «сборками», когда просто убрали ссылку из
+// меню, а раздел продолжал открываться напрямую по URL).
+app.use('/builder', (req, res) => {
+  res.status(404).render('404', { title: 'Страница не найдена' });
+});
+
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '1h', // css/js/картинки конструктора правятся редко, но имя файла не версионируется — час за глаза
 }));
@@ -120,7 +131,7 @@ const IGNORED_VISIT_PATHS = new Set(['/favicon.ico', '/robots.txt', '/sitemap.xm
 app.use((req, res, next) => {
   const ua = req.get('user-agent') || '';
   if (req.method === 'GET' && !req.path.startsWith('/admin') && !req.path.startsWith('/api')
-    && !req.path.startsWith('/uploads') && !req.path.startsWith('/builder') && req.path !== '/healthz'
+    && !req.path.startsWith('/uploads') && req.path !== '/healthz'
     && !IGNORED_VISIT_PATHS.has(req.path) && !BOT_UA_RE.test(ua)) {
     try {
       const day = moscowDateStr();

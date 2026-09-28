@@ -8,6 +8,8 @@
   <h1>Админы</h1>
   <%- include('_tabs', { active: 'admins' }) %>
 
+  <p class="hint">Роли: <b>Владелец</b> — всё; <b>Старший админ</b> — почти как владелец (бэкапы, управление админами и модерами), но не трогает владельца и других старших админов; <b>Админ</b> — управление модами, баны; <b>Модер</b> — проверка модов, жалобы, баг-репорты. Проверять моды могут все.</p>
+
   <div class="table-scroll" style="margin-bottom:24px;">
     <table>
       <thead><tr><th>Логин</th><th>Роль</th><th>Создан</th><th>Действия</th></tr></thead>
@@ -15,15 +17,24 @@
         <% admins.forEach(a => { %>
         <tr>
           <td><%= a.username %></td>
-          <td><%= a.role === 'owner' ? 'владелец' : 'модератор' %></td>
+          <td>
+            <% if (a.canManage && assignable.length) { %>
+              <form method="post" action="/admin/admins/<%= a.id %>/role" style="display:flex;gap:4px;">
+                <select name="role" style="font-size:12px;padding:4px 6px;">
+                  <% assignable.forEach(r => { %><option value="<%= r %>" <%= a.role === r ? 'selected' : '' %>><%= ROLE_LABELS[r] %></option><% }) %>
+                </select>
+                <button class="btn btn-ghost btn-sm" type="submit" title="Сменить роль">💾</button>
+              </form>
+            <% } else { %><%= ROLE_LABELS[a.role] || a.role %><% } %>
+          </td>
           <td><%= a.created_at %></td>
           <td class="row-actions">
-            <% if (a.role !== 'owner') { %>
+            <% if (a.canManage) { %>
               <form method="post" action="/admin/admins/<%= a.id %>/reset-password" onsubmit="return setPass(this)">
                 <input type="hidden" name="password" class="pass-input">
                 <button class="btn btn-ghost btn-sm" type="submit">Сбросить пароль</button>
               </form>
-              <form method="post" action="/admin/admins/<%= a.id %>/delete" onsubmit="return confirm('Удалить модератора?');">
+              <form method="post" action="/admin/admins/<%= a.id %>/delete" onsubmit="return confirm('Удалить этого админа?');">
                 <button class="btn btn-danger btn-sm" type="submit">Удалить</button>
               </form>
             <% } %>
@@ -34,17 +45,22 @@
     </table>
   </div>
 
-  <h2>Добавить модератора</h2>
+  <h2>Добавить админа</h2>
   <form method="post" action="/admin/admins" class="form-panel" style="max-width:420px;">
     <div class="field"><label>Логин</label><input type="text" name="username" required></div>
     <div class="field"><label>Пароль (минимум 6 символов)</label><input type="password" name="password" required minlength="6"></div>
+    <div class="field"><label>Роль</label>
+      <select name="role">
+        <% assignable.forEach(r => { %><option value="<%= r %>"><%= ROLE_LABELS[r] %></option><% }) %>
+      </select>
+    </div>
     <button class="btn btn-primary btn-block" type="submit">Добавить</button>
   </form>
 </main>
 
 <script>
 function setPass(form){
-  const p = prompt('Новый пароль для этого модератора (минимум 6 символов):', '');
+  const p = prompt('Новый пароль для этого админа (минимум 6 символов):', '');
   if (!p || p.length < 6) return false;
   form.querySelector('.pass-input').value = p;
   return true;

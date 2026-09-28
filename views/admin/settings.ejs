@@ -13,7 +13,7 @@
 
   <% if (buildMarker) { %><p class="hint" style="margin-bottom:16px;">Версия кода на сервере: <%= buildMarker %></p><% } %>
 
-  <% if (typeof visitsToday !== 'undefined' && admin.role === 'owner') { %>
+  <% if (typeof visitsToday !== 'undefined' && adminLevel >= 3) { %>
   <h2>Посещения сайта</h2>
   <div class="profile-stats" style="margin-bottom:22px;">
     <div><b><%= visitsToday %></b><span>сегодня</span></div>
@@ -28,7 +28,7 @@
     <button class="btn btn-primary btn-block" type="submit">Сохранить</button>
   </form>
 
-  <% if (admin.role === 'owner') { %>
+  <% if (adminLevel >= 3) { %>
   <h2 style="margin-top:28px;">Резервная копия</h2>
   <p class="hint">База данных и все загруженные файлы (обложки, скриншоты, архивы модов, картинки багов) одним архивом — пригодится при переезде на другой хостинг: просто распакуйте его в корень проекта на новом месте той же структурой папок.</p>
   <a class="btn btn-ghost btn-block" href="/admin/backup">⬇ Скачать резервную копию (.zip)</a>

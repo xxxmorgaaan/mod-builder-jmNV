@@ -8,8 +8,8 @@ const { restoreFromZipFile } = require('../src/backup');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const db = require('../src/db');
-const { requireAdmin, requireOwner } = require('../src/auth');
-const { toCsv, humanSize, revealControlCode, moscowDateStr, normalizeTag } = require('../src/helpers');
+const { requireAdmin, requireAdminLevel, requireSeniorAdmin, requireOwner, ROLE_LEVELS, ROLE_LABELS, levelOf, adminLevel } = require('../src/auth');
+const { toCsv, humanSize, revealControlCode, moscowDateStr, normalizeTag, issueControlCode } = require('../src/helpers');
 const { listZipEntries, readZipEntry } = require('../src/scan');
 const { logAction, actorFromReq } = require('../src/audit');
 const { invalidate: invalidateIpBanCache } = require('../src/ip-ban-cache');
@@ -248,7 +248,7 @@ router.get('/admin/mods/:id/inspect/lint-lua', async (req, res) => {
   }
 });
 
-router.get('/admin/mods', (req, res) => {
+router.get('/admin/mods', requireAdminLevel, (req, res) => {
   const mods = db.prepare(`SELECT * FROM mods ORDER BY created_at DESC`).all()
     .map(m => ({ ...m, controlCode: revealControlCode(m.control_code_hash) }));
   // Теги — одним запросом на все моды разом, а не по одному на строку.
@@ -259,7 +259,7 @@ router.get('/admin/mods', (req, res) => {
   mods.forEach((m) => { m.tagsList = (tagsByMod[m.id] || []).join(', '); });
   res.render('admin/mods', { title: 'Все моды', mods });
 });
-router.get('/admin/mods/export.csv', (req, res) => {
+router.get('/admin/mods/export.csv', requireAdminLevel, (req, res) => {
   const mods = db.prepare(`SELECT id, name, status, downloads, likes, created_at FROM mods ORDER BY created_at DESC`).all();
   const csv = toCsv(mods, [
     { key: 'id', label: 'id' }, { key: 'name', label: 'Название' }, { key: 'status', label: 'Статус' },
@@ -267,7 +267,7 @@ router.get('/admin/mods/export.csv', (req, res) => {
   ]);
   res.header('Content-Type', 'text/csv; charset=utf-8').attachment('mods.csv').send('\uFEFF' + csv);
 });
-router.post('/admin/mods/:id/tags', (req, res) => {
+router.post('/admin/mods/:id/tags', requireAdminLevel, (req, res) => {
   const mod = db.prepare('SELECT name FROM mods WHERE id = ?').get(req.params.id);
   if (mod) {
     const tags = [...new Set((req.body.tags || '').split(',').map(normalizeTag).filter(Boolean))].slice(0, 10);
@@ -278,7 +278,36 @@ router.post('/admin/mods/:id/tags', (req, res) => {
   }
   res.redirect('/admin/mods');
 });
-router.post('/admin/mods/:id/visibility', (req, res) => {
+
+// Выдать мод у новый код управления — на случай, если старый код почему-то
+// не подходит (испорчен/утерян/не совпадает) и автор не может редактировать
+// свой мод. Старый код перестаёт работать — этот один заменяет его целиком.
+router.post('/admin/mods/:id/regenerate-code', requireAdminLevel, (req, res) => {
+  const mod = db.prepare('SELECT name FROM mods WHERE id = ?').get(req.params.id);
+  if (mod) {
+    const { hash } = issueControlCode(req.params.id);
+    db.prepare('UPDATE mods SET control_code_hash = ? WHERE id = ?').run(hash, req.params.id);
+    logAction(actorFromReq(req), 'regenerate_code', mod.name);
+  }
+  res.redirect('/admin/mods');
+});
+
+// Ручная правка счётчиков — например, после сбойного импорта или переноса
+// мода. Значения видны всем и правятся тут же, в общей таблице — никакой
+// отдельной скрытой панели, действие пишется в общий журнал, как и любое
+// другое изменение мода.
+router.post('/admin/mods/:id/stats', requireAdminLevel, (req, res) => {
+  const mod = db.prepare('SELECT name, downloads, likes FROM mods WHERE id = ?').get(req.params.id);
+  if (mod) {
+    const downloads = Math.max(0, parseInt(req.body.downloads, 10) || 0);
+    const likes = Math.max(0, parseInt(req.body.likes, 10) || 0);
+    db.prepare('UPDATE mods SET downloads = ?, likes = ? WHERE id = ?').run(downloads, likes, req.params.id);
+    logAction(actorFromReq(req), 'edit_stats', mod.name, `скачиваний: ${mod.downloads} → ${downloads}, лайков: ${mod.likes} → ${likes}`);
+  }
+  res.redirect('/admin/mods');
+});
+
+router.post('/admin/mods/:id/visibility', requireAdminLevel, (req, res) => {
   const mod = db.prepare('SELECT * FROM mods WHERE id = ?').get(req.params.id);
   if (mod) {
     const next = mod.status === 'hidden' ? 'approved' : 'hidden';
@@ -287,7 +316,7 @@ router.post('/admin/mods/:id/visibility', (req, res) => {
   }
   res.redirect('/admin/mods');
 });
-router.post('/admin/mods/:id/delete', (req, res) => {
+router.post('/admin/mods/:id/delete', requireAdminLevel, (req, res) => {
   const mod = db.prepare('SELECT name FROM mods WHERE id = ?').get(req.params.id);
   db.prepare('DELETE FROM mods WHERE id = ?').run(req.params.id);
   logAction(actorFromReq(req), 'delete_mod', mod ? mod.name : req.params.id);
@@ -295,12 +324,12 @@ router.post('/admin/mods/:id/delete', (req, res) => {
 });
 
 // ---------------------------------------------------------------- таблица сборок
-router.get('/admin/bundles', (req, res) => {
+router.get('/admin/bundles', requireAdminLevel, (req, res) => {
   const bundles = db.prepare(`SELECT * FROM bundles ORDER BY created_at DESC`).all()
     .map(b => ({ ...b, controlCode: revealControlCode(b.control_code_hash) }));
   res.render('admin/bundles', { title: 'Все сборки', bundles });
 });
-router.get('/admin/bundles/export.csv', (req, res) => {
+router.get('/admin/bundles/export.csv', requireAdminLevel, (req, res) => {
   const bundles = db.prepare(`SELECT public_id, name, status, likes, created_at FROM bundles ORDER BY created_at DESC`).all();
   const csv = toCsv(bundles, [
     { key: 'public_id', label: 'id' }, { key: 'name', label: 'Название' }, { key: 'status', label: 'Статус' },
@@ -308,7 +337,7 @@ router.get('/admin/bundles/export.csv', (req, res) => {
   ]);
   res.header('Content-Type', 'text/csv; charset=utf-8').attachment('bundles.csv').send('\uFEFF' + csv);
 });
-router.post('/admin/bundles/:id/visibility', (req, res) => {
+router.post('/admin/bundles/:id/visibility', requireAdminLevel, (req, res) => {
   const bundle = db.prepare('SELECT * FROM bundles WHERE public_id = ?').get(req.params.id);
   if (bundle) {
     const next = bundle.status === 'hidden' ? 'approved' : 'hidden';
@@ -317,7 +346,7 @@ router.post('/admin/bundles/:id/visibility', (req, res) => {
   }
   res.redirect('/admin/bundles');
 });
-router.post('/admin/bundles/:id/delete', (req, res) => {
+router.post('/admin/bundles/:id/delete', requireAdminLevel, (req, res) => {
   const bundle = db.prepare('SELECT name FROM bundles WHERE public_id = ?').get(req.params.id);
   db.prepare('DELETE FROM bundles WHERE public_id = ?').run(req.params.id);
   logAction(actorFromReq(req), 'delete_bundle', bundle ? bundle.name : req.params.id);
@@ -325,7 +354,7 @@ router.post('/admin/bundles/:id/delete', (req, res) => {
 });
 
 // ---------------------------------------------------------------- пользователи (баны)
-router.get('/admin/users', (req, res) => {
+router.get('/admin/users', requireAdminLevel, (req, res) => {
   const users = db.prepare(
     `SELECT u.*, (SELECT COUNT(*) FROM mods m WHERE m.user_id = u.id) mods_count
      FROM users u ORDER BY u.created_at DESC`
@@ -334,7 +363,7 @@ router.get('/admin/users', (req, res) => {
   res.render('admin/users', { title: 'Пользователи', users, bannedIps });
 });
 
-router.post('/admin/users/:id/ban', (req, res) => {
+router.post('/admin/users/:id/ban', requireAdminLevel, (req, res) => {
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
   if (user) {
     db.prepare('UPDATE users SET is_banned = 1 WHERE id = ?').run(user.id);
@@ -349,7 +378,7 @@ router.post('/admin/users/:id/ban', (req, res) => {
   }
   res.redirect('/admin/users');
 });
-router.post('/admin/users/:id/unban', (req, res) => {
+router.post('/admin/users/:id/unban', requireAdminLevel, (req, res) => {
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
   if (user) {
     db.prepare('UPDATE users SET is_banned = 0 WHERE id = ?').run(user.id);
@@ -359,7 +388,7 @@ router.post('/admin/users/:id/unban', (req, res) => {
   }
   res.redirect('/admin/users');
 });
-router.post('/admin/ban-ip', (req, res) => {
+router.post('/admin/ban-ip', requireAdminLevel, (req, res) => {
   const ip = (req.body.ip || '').trim();
   const reason = (req.body.reason || '').trim() || null;
   if (ip) {
@@ -369,7 +398,7 @@ router.post('/admin/ban-ip', (req, res) => {
   }
   res.redirect('/admin/users');
 });
-router.post('/admin/unban-ip', (req, res) => {
+router.post('/admin/unban-ip', requireAdminLevel, (req, res) => {
   const ip = req.body.ip || '';
   db.prepare('DELETE FROM banned_ips WHERE ip = ?').run(ip);
   invalidateIpBanCache();
@@ -394,8 +423,29 @@ router.post('/admin/bugs/:id/delete', (req, res) => {
 
 // ---------------------------------------------------------------- журнал действий
 router.get('/admin/log', (req, res) => {
-  const entries = db.prepare('SELECT * FROM admin_actions ORDER BY id DESC LIMIT 200').all();
-  res.render('admin/log', { title: 'Журнал действий', entries });
+  const perPage = 50;
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const actor = (req.query.actor || '').trim();
+  const action = (req.query.action || '').trim();
+  const q = (req.query.q || '').trim();
+
+  const where = [];
+  const params = [];
+  if (actor) { where.push('admin_name = ?'); params.push(actor); }
+  if (action) { where.push('action = ?'); params.push(action); }
+  if (q) { where.push('(target LIKE ? OR details LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
+  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+  const total = db.prepare(`SELECT COUNT(*) c FROM admin_actions ${whereSql}`).get(...params).c;
+  const entries = db.prepare(`SELECT * FROM admin_actions ${whereSql} ORDER BY id DESC LIMIT ? OFFSET ?`)
+    .all(...params, perPage, (page - 1) * perPage);
+  const actors = db.prepare('SELECT DISTINCT admin_name FROM admin_actions ORDER BY admin_name').all().map(r => r.admin_name);
+  const actions = db.prepare('SELECT DISTINCT action FROM admin_actions ORDER BY action').all().map(r => r.action);
+
+  res.render('admin/log', {
+    title: 'Журнал действий', entries, actors, actions, actor, action, q,
+    page, pages: Math.max(1, Math.ceil(total / perPage)), total,
+  });
 });
 
 router.get('/admin/complaints', (req, res) => {
@@ -440,29 +490,63 @@ router.post('/admin/complaints/:id/delete-target', (req, res) => {
 });
 
 // ---------------------------------------------------------------- админы (только владелец)
-router.get('/admin/admins', requireOwner, (req, res) => {
-  const admins = db.prepare('SELECT id, username, role, created_at FROM admins ORDER BY created_at').all();
-  res.render('admin/admins', { title: 'Админы', admins });
+// ---------------------------------------------------------------- управление админами
+// Старший админ управляет админами и модерами, но не может создавать/удалять/
+// сбрасывать пароль владельцу и другим старшим админам — иначе он мог бы
+// «выпилить» вышестоящего или поднять себе подобных. Такое может только владелец.
+const ASSIGNABLE_ROLES = ['moderator', 'admin', 'senior_admin'];
+
+/** Может ли текущий админ управлять учётной записью с такой ролью. */
+function canManageRole(req, targetRole) {
+  if (targetRole === 'owner') return false;
+  const me = adminLevel(req);
+  if (me >= ROLE_LEVELS.owner) return true;
+  return levelOf(targetRole) < me && me >= ROLE_LEVELS.senior_admin;
+}
+
+router.get('/admin/admins', requireSeniorAdmin, (req, res) => {
+  const admins = db.prepare('SELECT id, username, role, created_at FROM admins ORDER BY created_at').all()
+    .map(a => ({ ...a, canManage: canManageRole(req, a.role) }));
+  const assignable = ASSIGNABLE_ROLES.filter(r => canManageRole(req, r));
+  res.render('admin/admins', { title: 'Админы', admins, assignable, ROLE_LABELS });
 });
-router.post('/admin/admins', requireOwner, (req, res) => {
+router.post('/admin/admins', requireSeniorAdmin, (req, res) => {
   const username = (req.body.username || '').trim();
   const password = (req.body.password || '').trim();
-  if (username && password.length >= 6) {
-    db.prepare('INSERT INTO admins (username, password_hash, role) VALUES (?, ?, \'moderator\')')
-      .run(username, bcrypt.hashSync(password, 10));
+  const role = ASSIGNABLE_ROLES.includes(req.body.role) ? req.body.role : 'moderator';
+  if (username && password.length >= 6 && canManageRole(req, role)) {
+    try {
+      db.prepare('INSERT INTO admins (username, password_hash, role) VALUES (?, ?, ?)')
+        .run(username, bcrypt.hashSync(password, 10), role);
+      logAction(actorFromReq(req), 'create_admin', username, ROLE_LABELS[role]);
+    } catch (e) { /* логин занят — просто вернёмся к списку */ }
   }
   res.redirect('/admin/admins');
 });
-router.post('/admin/admins/:id/reset-password', requireOwner, (req, res) => {
-  const password = (req.body.password || '').trim();
-  if (password.length >= 6) {
-    db.prepare('UPDATE admins SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(password, 10), req.params.id);
-  }
-  res.redirect('/admin/admins');
-});
-router.post('/admin/admins/:id/delete', requireOwner, (req, res) => {
+router.post('/admin/admins/:id/role', requireSeniorAdmin, (req, res) => {
   const target = db.prepare('SELECT * FROM admins WHERE id = ?').get(req.params.id);
-  if (target && target.role !== 'owner') db.prepare('DELETE FROM admins WHERE id = ?').run(req.params.id);
+  const role = req.body.role;
+  if (target && ASSIGNABLE_ROLES.includes(role) && canManageRole(req, target.role) && canManageRole(req, role)) {
+    db.prepare('UPDATE admins SET role = ? WHERE id = ?').run(role, target.id);
+    logAction(actorFromReq(req), 'change_admin_role', target.username, `${ROLE_LABELS[target.role]} → ${ROLE_LABELS[role]}`);
+  }
+  res.redirect('/admin/admins');
+});
+router.post('/admin/admins/:id/reset-password', requireSeniorAdmin, (req, res) => {
+  const target = db.prepare('SELECT * FROM admins WHERE id = ?').get(req.params.id);
+  const password = (req.body.password || '').trim();
+  if (target && password.length >= 6 && canManageRole(req, target.role)) {
+    db.prepare('UPDATE admins SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(password, 10), target.id);
+    logAction(actorFromReq(req), 'reset_admin_password', target.username);
+  }
+  res.redirect('/admin/admins');
+});
+router.post('/admin/admins/:id/delete', requireSeniorAdmin, (req, res) => {
+  const target = db.prepare('SELECT * FROM admins WHERE id = ?').get(req.params.id);
+  if (target && canManageRole(req, target.role)) {
+    db.prepare('DELETE FROM admins WHERE id = ?').run(target.id);
+    logAction(actorFromReq(req), 'delete_admin', target.username, ROLE_LABELS[target.role]);
+  }
   res.redirect('/admin/admins');
 });
 
@@ -475,7 +559,7 @@ router.post('/admin/admins/:id/delete', requireOwner, (req, res) => {
 // выше, поверх текущих данных, и сразу переоткрывает соединение с базой
 // (см. src/backup.js → db.reload()) — новые данные видны сразу, без
 // перезапуска сервера.
-router.post('/admin/restore', requireOwner, uploadBackup.single('backup'), async (req, res) => {
+router.post('/admin/restore', requireSeniorAdmin, uploadBackup.single('backup'), async (req, res) => {
   if (!req.file) return res.redirect('/admin/settings');
   try {
     const result = await restoreFromZipFile(req.file.path);
@@ -497,7 +581,7 @@ router.post('/admin/restore', requireOwner, uploadBackup.single('backup'), async
   }
 });
 
-router.get('/admin/backup', requireOwner, (req, res) => {
+router.get('/admin/backup', requireSeniorAdmin, (req, res) => {
   res.attachment(`alem-mod-backup-${new Date().toISOString().slice(0, 10)}.zip`);
   const archive = archiver('zip', { zlib: { level: 9 } });
   archive.on('error', (err) => { throw err; });

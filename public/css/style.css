@@ -490,7 +490,7 @@ tr:hover td{ background: rgba(255,255,255,.02); }
   .site-nav .nav-sub{ display: none; }   /* подписи нужны только в мобильном меню */
   .site-nav .nav-section{ display: none; }
   .site-nav a .nav-ico{ font-size: 14px; width: auto; }
-  .entry-cards{ grid-template-columns: repeat(3, 1fr); }
+  .entry-cards{ grid-template-columns: repeat(2, 1fr); }
   .mod-grid{ grid-template-columns: repeat(3, 1fr); }
   /* 3 колонки — при лимите 6 модов на секцию это ровно 2 ряда. */
   .mod-grid.is-compact{ grid-template-columns: repeat(3, 1fr); }
@@ -514,3 +514,36 @@ tr:hover td{ background: rgba(255,255,255,.02); }
 .lint-bar{ display: flex; align-items: center; margin-bottom: 10px; }
 .lint-ok{ color: var(--lime); margin-left: 10px; font-size: 13px; }
 .lint-error{ color: var(--danger); margin-left: 10px; font-size: 13px; }
+
+/* Журнал действий: фильтры, перенос длинных деталей, пагинация */
+.log-filters{ display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.log-filters select, .log-filters input{ min-width: 0; max-width: 100%; font-size: 13px; padding: 6px 8px; }
+.log-details{ max-width: 380px; overflow-wrap: anywhere; }
+.log-pager{ display: flex; gap: 8px; margin-top: 12px; }
+
+/* ---- Защита от «поехавшего» текста и вылезающих блоков ---- */
+/* Грид/флекс-потомки по умолчанию не сжимаются уже своего содержимого —
+   длинное слово или ссылка растягивали карточку и сдвигали соседей. */
+.mod-grid > *, .entry-cards > *, .gallery > *, .profile-card > *,
+.mod-card, .mod-card .body, .comment, .comment > *, .form-panel, .field{ min-width: 0; }
+.mod-card h3, .mod-card p, .mod-card .body, .comment p, .comment .author,
+.section-head p, .hero p, .lead, .empty-state p, .empty-state h1,
+.alert, .bug-row-title, .profile-card-body, .info-col, .info-col p, .info-col h1{
+  overflow-wrap: anywhere; word-break: break-word;
+}
+td, th{ overflow-wrap: anywhere; vertical-align: top; }
+td .code-pill, td code{ word-break: break-all; }
+.code-pill{ max-width: 100%; display: inline-block; word-break: break-all; }
+pre, code{ max-width: 100%; }
+pre{ overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+input, select, textarea{ max-width: 100%; box-sizing: border-box; }
+textarea{ resize: vertical; }
+img, video, svg{ max-width: 100%; height: auto; }
+.site-nav a > span:last-child, .nav-sub{ min-width: 0; overflow-wrap: anywhere; }
+.row-actions{ display: flex; gap: 6px; flex-wrap: wrap; }
+.row-actions form{ margin: 0; }
+td .code-pill{ white-space: normal; }
+
+/* Аддоны */
+.addon-note{ background: var(--panel-2); border: 1px solid var(--border-2); border-radius: var(--radius); padding: 8px 12px; font-size: 13px; margin: 0 0 12px; }
+.addon-badge{ margin: -4px 0 6px; font-size: 11.5px; color: var(--lime); }

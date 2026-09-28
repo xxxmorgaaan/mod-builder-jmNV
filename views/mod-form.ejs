@@ -5,7 +5,9 @@
 <%- include('partials/header') %>
 
 <main class="container section" style="max-width:720px;">
-  <h1><%= mode === 'create' ? 'Опубликовать мод' : 'Редактировать: ' + mod.name %></h1>
+  <% const isAddon = typeof addonMode !== 'undefined' && addonMode; %>
+  <h1><%= mode === 'create' ? (isAddon ? 'Создать аддон' : 'Опубликовать мод') : 'Редактировать: ' + mod.name %></h1>
+  <% if (isAddon) { %><p class="hint">Аддон не публикуется сам по себе — он зависит от мода и показывается на его странице и в разделе «Аддоны». Аддон проходит ту же проверку модераторами, что и обычные моды.</p><% } %>
 
   <% if (typeof error !== 'undefined' && error) { %><div class="alert alert-error"><%= error %></div><% } %>
   <% if (typeof saved !== 'undefined' || (typeof mode !== 'undefined' && mode === 'edit')) { %>
@@ -14,6 +16,15 @@
 
   <form method="post" action="<%= mode === 'create' ? '/mods' : '/mods/' + mod.id %>" enctype="multipart/form-data" class="form-panel">
     <% if (mode === 'edit') { %><input type="hidden" name="code" value="<%= code %>"><% } %>
+    <% if (isAddon) { %>
+    <div class="field">
+      <label>К какому моду аддон *</label>
+      <select name="parent_mod_id" required>
+        <option value="">— выберите мод —</option>
+        <% parents.forEach(p => { %><option value="<%= p.id %>" <%= (typeof selectedParent !== 'undefined' && selectedParent === p.id) ? 'selected' : '' %>><%= p.name %></option><% }) %>
+      </select>
+    </div>
+    <% } %>
 
     <div class="field">
       <label>Название мода *</label>

@@ -49,6 +49,13 @@ function migrate(conn) {
     conn.exec('ALTER TABLE mods ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE SET NULL');
     console.log('[db] Миграция: добавлена колонка mods.user_id');
   }
+  // Аддоны — это те же моды, только с родителем: parent_mod_id указывает на
+  // мод, к которому аддон относится (удалили родителя — аддоны уходят вместе с ним).
+  if (!modCols.includes('parent_mod_id')) {
+    conn.exec('ALTER TABLE mods ADD COLUMN parent_mod_id TEXT REFERENCES mods(id) ON DELETE CASCADE');
+    console.log('[db] Миграция: добавлена колонка mods.parent_mod_id (аддоны)');
+  }
+  conn.exec('CREATE INDEX IF NOT EXISTS idx_mods_parent ON mods(parent_mod_id)');
   const bundleCols = conn.prepare("PRAGMA table_info(bundles)").all().map(c => c.name);
   if (!bundleCols.includes('user_id')) {
     conn.exec('ALTER TABLE bundles ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE SET NULL');
@@ -77,6 +84,7 @@ function migrate(conn) {
     addCol('telegram_username', 'TEXT');
     addCol('is_banned', 'INTEGER NOT NULL DEFAULT 0');
     addCol('last_ip', 'TEXT');
+    addCol('bio', 'TEXT');
   }
   conn.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id) WHERE telegram_id IS NOT NULL');
 

@@ -30,6 +30,11 @@
           <button class="btn btn-ghost btn-sm btn-danger" formaction="/account/avatar/delete" formenctype="application/x-www-form-urlencoded" type="submit">Убрать</button>
         <% } %>
       </form>
+      <form method="post" action="/account/bio" style="margin-top:10px;">
+        <label class="hint" style="display:block;margin-bottom:4px;">О себе — виден на публичном профиле</label>
+        <textarea name="bio" maxlength="500" rows="3" style="width:100%;max-width:420px;" placeholder="Например: делаю моды на оружие и постройки"><%= me.bio || '' %></textarea>
+        <button class="btn btn-ghost btn-sm" type="submit" style="margin-top:4px;">Сохранить описание</button>
+      </form>
     </div>
   </div>
 
@@ -45,6 +50,30 @@
       <input type="text" name="code" required placeholder="kylysh-a1b2c.xxxxxxxxxxxxxx">
     </div>
     <button class="btn btn-ghost btn-block" type="submit">Присвоить мод себе</button>
+  </form>
+
+  <h2>Мои подборки (<%= collections.length %>)</h2>
+  <p class="hint">Список модов на одну тему — своя мини-экосистема поверх уже опубликованных модов. Видна на вашем публичном профиле.</p>
+  <% if (collections.length) { %>
+  <div class="bug-list" style="margin-bottom:16px;">
+    <% collections.forEach(c => { %>
+      <a class="bug-row" href="/collections/<%= c.id %>">
+        <span class="bug-row-title"><%= c.name %></span>
+        <span class="bug-row-meta"><%= c.modCount %> мод(ов)</span>
+      </a>
+    <% }) %>
+  </div>
+  <% } %>
+  <form method="post" action="/collections" class="form-panel" style="max-width:420px;margin-bottom:28px;">
+    <div class="field">
+      <label>Название подборки</label>
+      <input type="text" name="name" required maxlength="80" placeholder="Например: Всё для выживания">
+    </div>
+    <div class="field">
+      <label>Описание (необязательно)</label>
+      <input type="text" name="description" maxlength="500" placeholder="Пара слов, о чём подборка">
+    </div>
+    <button class="btn btn-ghost btn-block" type="submit">+ Создать подборку</button>
   </form>
 
   <h2>Мои моды (<%= mods.length %>)</h2>

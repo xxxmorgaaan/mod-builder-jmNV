@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/header') %>
+
+<main class="container section">
+  <div class="section-head">
+    <h2>🧩 Аддоны к модам<% if (parentFilter) { %> — «<%= parentFilter.name %>»<% } %></h2>
+    <a href="/addons/new<%= parentFilter ? '?parent=' + encodeURIComponent(parentFilter.id) : '' %>">➕ Создать аддон</a>
+  </div>
+  <p class="hint">Аддон — дополнение, которое зависит от конкретного мода и без него не работает. Найдено: <%= total %>.</p>
+
+  <form method="get" action="/addons" class="search-row">
+    <input type="text" name="q" value="<%= q %>" placeholder="Поиск по аддонам">
+    <% if (parentFilter) { %><input type="hidden" name="mod" value="<%= parentFilter.id %>"><% } %>
+    <button class="btn btn-primary btn-sm" type="submit">Найти</button>
+    <% if (parentFilter) { %><a class="btn btn-ghost btn-sm" href="/addons">Все аддоны</a><% } %>
+  </form>
+
+  <% if (!addons.length) { %>
+    <p class="hint">Аддонов пока нет.</p>
+  <% } else { %>
+    <div class="mod-grid">
+      <% addons.forEach(mod => { %><%- include('partials/mod-card', { mod }) %><% }) %>
+    </div>
+  <% } %>
+
+  <% if (pages > 1) { %>
+    <div class="log-pager">
+      <% const qs = (p) => '/addons?' + new URLSearchParams({ q, mod: parentFilter ? parentFilter.id : '', page: p }).toString(); %>
+      <% if (page > 1) { %><a class="btn btn-ghost btn-sm" href="<%= qs(page - 1) %>">← Назад</a><% } %>
+      <span class="hint">Страница <%= page %> из <%= pages %></span>
+      <% if (page < pages) { %><a class="btn btn-ghost btn-sm" href="<%= qs(page + 1) %>">Дальше →</a><% } %>
+    </div>
+  <% } %>
+</main>
+
+<%- include('partials/footer') %>
+</body>
+</html>

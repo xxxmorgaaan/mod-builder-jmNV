@@ -121,8 +121,10 @@ router.get('/account', (req, res) => {
   const bundles = db.prepare('SELECT * FROM bundles WHERE user_id = ? ORDER BY created_at DESC').all(req.session.user.id)
     .map(b => ({ ...b, controlCode: revealControlCode(b.control_code_hash) }));
   const me = db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.user.id);
+  const collections = db.prepare('SELECT * FROM collections WHERE user_id = ? ORDER BY created_at DESC').all(req.session.user.id)
+    .map(c => ({ ...c, modCount: db.prepare('SELECT COUNT(*) n FROM collection_mods WHERE collection_id = ?').get(c.id).n }));
   res.render('account', {
-    title: 'Личный кабинет', mods, bundles, me, saved: !!req.query.saved,
+    title: 'Личный кабинет', mods, bundles, me, collections, saved: !!req.query.saved,
     claimed: !!req.query.claimed, claimError: req.query.claimError || null,
   });
 });
@@ -160,6 +162,13 @@ router.post('/account/avatar', authLimiter, uploadAvatar.single('avatar'), (req,
 router.post('/account/avatar/delete', (req, res) => {
   if (!req.session.user) return res.redirect('/login');
   db.prepare('UPDATE users SET avatar_path = NULL WHERE id = ?').run(req.session.user.id);
+  res.redirect('/account?saved=1');
+});
+
+router.post('/account/bio', authLimiter, (req, res) => {
+  if (!req.session.user) return res.redirect('/login');
+  const bio = (req.body.bio || '').trim().slice(0, 500);
+  db.prepare('UPDATE users SET bio = ? WHERE id = ?').run(bio || null, req.session.user.id);
   res.redirect('/account?saved=1');
 });
 

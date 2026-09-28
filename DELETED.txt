@@ -1,0 +1,14 @@
+УДАЛИТЬ на сервере (конструктор модов убран с сайта):
+
+  rm -rf /root/alem-mod/public/builder
+
+Файлы в этом архиве кладите поверх проекта с теми же путями, потом:
+
+  cd /root/alem-mod && pm2 restart alem-mod
+
+npm install не нужен (package.json не менялся). База обновится сама при запуске
+(добавится колонка mods.parent_mod_id для аддонов и новые таблицы).
+
+telegram-bot/.env в архив НЕ включён, чтобы не затереть ваш токен. Если бот у вас
+запускается командой pm2 restart mod-hub — поправьте SITE_RESTART_CMD в
+telegram-bot/.env на: pm2 restart alem-mod

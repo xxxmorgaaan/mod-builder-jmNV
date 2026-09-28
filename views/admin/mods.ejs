@@ -8,7 +8,7 @@
   <h1>Все моды</h1>
   <%- include('_tabs', { active: 'mods' }) %>
 
-  <p class="hint">Столбец «Код» — тот самый код управления, который получил автор при публикации. Если он его потерял и написал вам в ЛС — скопируйте и пришлите обратно.</p>
+  <p class="hint">Столбец «Код» — тот самый код управления, который получил автор при публикации. Если он его потерял и написал вам в ЛС — скопируйте и пришлите обратно. Если код есть, но сайт всё равно говорит «не подходит» (испорчен/не совпадает) — жмите «🔄 Новый код»: старый перестанет действовать, а новый сразу появится в этой таблице, перешлите его автору. Скачивания и лайки — тоже можно поправить вручную (например, после сбойного импорта или переноса мода) — каждое изменение попадает в журнал действий.</p>
   <div style="margin-bottom:14px;"><a class="btn btn-ghost btn-sm" href="/admin/mods/export.csv">⬇ Экспорт в CSV</a></div>
 
   <div class="table-scroll">
@@ -31,9 +31,25 @@
             <% } else { %>
               <span class="hint">не удалось расшифровать</span>
             <% } %>
+            <form method="post" action="/admin/mods/<%= m.id %>/regenerate-code"
+              onsubmit="return confirm('Старый код перестанет работать. Выдать новый и показать в таблице?');" style="margin-top:4px;">
+              <button class="btn btn-ghost btn-sm" type="submit" title="Если старый код не подходит — выдать новый">🔄 Новый код</button>
+            </form>
           </td>
-          <td><%= m.downloads %></td>
-          <td><%= m.likes %></td>
+          <td>
+            <form method="post" action="/admin/mods/<%= m.id %>/stats" style="display:flex;gap:4px;">
+              <input type="number" name="downloads" value="<%= m.downloads %>" min="0" style="width:70px;font-size:12px;padding:4px 6px;">
+              <input type="hidden" name="likes" value="<%= m.likes %>">
+              <button class="btn btn-ghost btn-sm" type="submit" title="Сохранить">💾</button>
+            </form>
+          </td>
+          <td>
+            <form method="post" action="/admin/mods/<%= m.id %>/stats" style="display:flex;gap:4px;">
+              <input type="hidden" name="downloads" value="<%= m.downloads %>">
+              <input type="number" name="likes" value="<%= m.likes %>" min="0" style="width:70px;font-size:12px;padding:4px 6px;">
+              <button class="btn btn-ghost btn-sm" type="submit" title="Сохранить">💾</button>
+            </form>
+          </td>
           <td><%= m.created_at %></td>
           <td class="row-actions">
             <a class="btn btn-ghost btn-sm" href="/admin/mods/<%= m.id %>/inspect">🔍 Файлы</a>

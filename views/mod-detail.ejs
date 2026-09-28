@@ -28,6 +28,10 @@
         <% tags.forEach(t => { %><a class="tag-chip" href="/games/<%= game.slug %>?tag=<%= encodeURIComponent(t) %>"><%= t %></a><% }) %>
       </div>
       <% } %>
+      <% if (parentMod) { %>
+        <p class="addon-note">🧩 Аддон — работает только вместе с модом
+          <a href="/mods/<%= parentMod.slug %>"><b><%= parentMod.name %></b></a>. Сначала установите его.</p>
+      <% } %>
       <p><%= mod.summary %></p>
       <% if (author) { %>
         <p class="hint" style="display:flex;align-items:center;gap:6px;">
@@ -46,7 +50,7 @@
           ♥ <span class="like-count"><%= mod.likes %></span>
         </button>
         <span class="btn btn-ghost btn-sm" style="cursor:default;">⬇ <%= mod.downloads %> скачиваний</span>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="navigator.share ? navigator.share({title:'<%= mod.name %>', url: location.href}) : (navigator.clipboard.writeText(location.href), alert('Ссылка скопирована'))">Поделиться</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-share-title="<%= mod.name %>" onclick="var t=this.dataset.shareTitle; navigator.share ? navigator.share({title:t, url: location.href}) : (navigator.clipboard.writeText(location.href), alert('Ссылка скопирована'))">Поделиться</button>
         <a class="btn btn-ghost btn-sm" href="/report/mod/<%= mod.id %>">⚠ Пожаловаться</a>
         <% if (authorized) { %>
           <a class="btn btn-ghost btn-sm" href="/mods/<%= mod.id %>/edit?code=<%= encodeURIComponent(code) %>">✏️ Редактировать</a>
@@ -54,6 +58,21 @@
           <a class="btn btn-ghost btn-sm" href="/manage.html">🔑 Это ваш мод? Управлять</a>
         <% } %>
       </div>
+
+      <% if (user) { %>
+        <% if (myCollections.length) { %>
+          <form method="post" action="" id="addToCollection" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;max-width:420px;"
+            onsubmit="this.action='/collections/' + this.collection.value + '/add';">
+            <select name="collection" style="flex:1;min-width:160px;">
+              <% myCollections.forEach(c => { %><option value="<%= c.id %>"><%= c.name %></option><% }) %>
+            </select>
+            <input type="hidden" name="mod_id" value="<%= mod.id %>">
+            <button class="btn btn-ghost btn-sm" type="submit">➕ В подборку</button>
+          </form>
+        <% } else { %>
+          <p class="hint" style="margin-top:10px;"><a href="/account">Создайте подборку</a>, чтобы собирать понравившиеся моды в списки по темам.</p>
+        <% } %>
+      <% } %>
 
       <% if (versions.length) { %>
         <a class="btn btn-primary btn-block" href="/mods/<%= mod.id %>/download/<%= versions[0].id %><%= code ? '?code='+encodeURIComponent(code) : '' %>">
@@ -83,6 +102,23 @@
         <% if (v.changelog) { %><div class="changelog"><%= v.changelog %></div><% } %>
       </div>
     <% }) %>
+  </section>
+  <% } %>
+
+  <% if (!mod.parent_mod_id) { %>
+  <section style="margin-top:32px;">
+    <div class="section-head">
+      <h2>Аддоны к этому моду (<%= addons.length %>)</h2>
+      <a href="/addons/new?parent=<%= encodeURIComponent(mod.id) %>">➕ Создать аддон</a>
+    </div>
+    <% if (!addons.length) { %>
+      <p class="hint">Пока аддонов нет. Аддон — это дополнение, которое зависит от этого мода и без него не работает.</p>
+    <% } else { %>
+      <div class="mod-grid">
+        <% addons.forEach(m => { %><%- include('partials/mod-card', { mod: m }) %><% }) %>
+      </div>
+      <p style="margin-top:10px;"><a href="/addons?mod=<%= encodeURIComponent(mod.id) %>">Все аддоны к этому моду →</a></p>
+    <% } %>
   </section>
   <% } %>
 

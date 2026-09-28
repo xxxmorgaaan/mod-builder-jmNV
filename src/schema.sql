@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS mods (
   user_id            INTEGER REFERENCES users(id) ON DELETE SET NULL,
   status             TEXT NOT NULL DEFAULT 'pending', -- pending | approved | rejected | hidden
   moderation_note    TEXT,
+  parent_mod_id      TEXT REFERENCES mods(id) ON DELETE CASCADE, -- NULL = обычный мод; иначе это аддон к моду parent_mod_id
   downloads          INTEGER NOT NULL DEFAULT 0,
   likes              INTEGER NOT NULL DEFAULT 0,
   created_at         TEXT NOT NULL DEFAULT (datetime('now')),
@@ -232,3 +233,37 @@ CREATE TABLE IF NOT EXISTS mod_download_log (
   count  INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (mod_id, day)
 );
+
+-- Защита от накрутки счётчика скачиваний: один и тот же посетитель
+-- (по тому же voter_token, что и у лайков) засчитывается в счётчик мода не
+-- чаще раза в день — сам файл при этом отдаётся всегда, ограничен только
+-- подсчёт. Без этого можно было просто долбить кнопку «Скачать» и разгонять
+-- число до любого значения.
+CREATE TABLE IF NOT EXISTS mod_download_votes (
+  mod_id      TEXT NOT NULL REFERENCES mods(id) ON DELETE CASCADE,
+  voter_token TEXT NOT NULL,
+  day         TEXT NOT NULL,
+  PRIMARY KEY (mod_id, voter_token, day)
+);
+
+-- ------------------------------------------------------------- подборки модов
+-- Курируемые пользователями списки модов на одну тему («экосистема» модов
+-- одного жанра/автора/сеттинга) — не путать со «сборками» (отключены):
+-- сборка это отдельный архив, подборка — просто список ссылок на уже
+-- опубликованные моды, для навигации и открытия новых модов.
+CREATE TABLE IF NOT EXISTS collections (
+  id          TEXT PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name        TEXT NOT NULL,
+  description TEXT,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_collections_user_id ON collections(user_id);
+
+CREATE TABLE IF NOT EXISTS collection_mods (
+  collection_id TEXT NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
+  mod_id        TEXT NOT NULL REFERENCES mods(id) ON DELETE CASCADE,
+  position      INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (collection_id, mod_id)
+);
+CREATE INDEX IF NOT EXISTS idx_collection_mods_mod_id ON collection_mods(mod_id);

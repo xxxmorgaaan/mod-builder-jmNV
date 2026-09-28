@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/header') %>
+<main class="container section">
+  <div class="empty-state">
+    <h1>Подождите немного</h1>
+    <p>Мод «<%= mod.name %>» можно скачивать не чаще одного раза в 2 минуты. Повторите через <b id="left"><%= seconds %></b> сек.</p>
+    <a class="btn btn-primary" href="/mods/<%= mod.slug %>">← Вернуться к моду</a>
+  </div>
+</main>
+<script>
+(function(){
+  var n = <%= seconds %>, el = document.getElementById('left');
+  var t = setInterval(function(){ n--; if (n <= 0) { clearInterval(t); el.textContent = '0'; } else el.textContent = n; }, 1000);
+})();
+</script>
+<%- include('partials/footer') %>
+</body>
+</html>

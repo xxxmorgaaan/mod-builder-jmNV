@@ -47,7 +47,7 @@ cp .env.example .env
 nano .env
 npm install
 npm install -g pm2
-pm2 start server.js --name mod-hub
+pm2 start server.js --name alem-mod
 pm2 save
 pm2 startup    # выполните команду, которую покажет — автозапуск при перезагрузке VPS
 ```
@@ -57,7 +57,7 @@ pm2 startup    # выполните команду, которую покаже�
 cd alem-mod
 git pull
 npm install     # только если менялся package.json
-pm2 restart mod-hub
+pm2 restart alem-mod
 ```
 
 **Главное правило для обоих способов: обновляйте код через `git pull` в

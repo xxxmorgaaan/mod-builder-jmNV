@@ -99,8 +99,16 @@ async function validateModStructure(filePath) {
 
   const files = directory.files.filter(f => f.type === 'File');
   const modJsonEntry = files.find(f => /(^|\/)mod\.json$/i.test(f.path));
+
   if (!modJsonEntry) {
-    return { blocked: true, issues: ['в архиве нет mod.json — это не похоже на мод для Alem Colony'], notes: [] };
+    // Мод без mod.json — например, чисто скриптовый (Lua) мод без обычного
+    // манифеста. Раньше это блокировало публикацию целиком; теперь только
+    // предупреждение модератору — дальше не проверяем структуру подробно
+    // (не с чем сравнивать без mod.json), но и не отклоняем автоматически.
+    notes.push('в архиве нет mod.json — подробную структуру не проверяю, но это не повод отклонять автоматически, если для вашей игры это нормально (например, чисто скриптовый мод)');
+    const luaFiles = files.filter(f => f.path.toLowerCase().endsWith('.lua'));
+    if (luaFiles.length) notes.push(`найдено Lua-скриптов: ${luaFiles.length}`);
+    return { blocked: false, issues, notes };
   }
   const prefix = modJsonEntry.path.slice(0, modJsonEntry.path.length - 'mod.json'.length);
 
@@ -130,13 +138,18 @@ async function validateModStructure(filePath) {
 
     if (!(rel in KNOWN_MOD_JSON_FILES)) {
       if (rel.endsWith('.json')) notes.push(`неизвестный файл ${rel} — игра его не использует, но и не мешает`);
+      else if (rel.endsWith('.lua')) notes.push(`Lua-скрипт: ${rel}`);
       continue;
     }
     let parsed;
     try {
       parsed = await readJsonEntry(entry);
     } catch (err) {
-      issues.push(`${rel} повреждён или не является JSON: ${err.message}`);
+      // Блокируем публикацию только по mod.json (см. выше). Остальные *.json
+      // могут быть битыми (опечатка, лишняя запятая и т.п.) — это не повод
+      // рубить весь мод автоматически: модераторы всё равно смотрят файлы
+      // сами, так что просто передаём им замечание.
+      notes.push(`${rel} повреждён или не является JSON: ${err.message} — публикацию не блокирую, но посмотрите файл`);
       continue;
     }
     const expectedKeys = KNOWN_MOD_JSON_FILES[rel];
