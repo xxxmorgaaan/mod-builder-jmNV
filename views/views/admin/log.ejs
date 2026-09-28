@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('../partials/head', { title }) %></head>
+<body>
+<%- include('../partials/header') %>
+
+<main class="container section">
+  <h1>Журнал действий</h1>
+  <%- include('_tabs', { active: 'log' }) %>
+
+  <% const actionLabels = {
+    approve_mod: '✅ Одобрил мод', reject_mod: '❌ Отклонил мод',
+    bulk_approve_mods: '✅ Массово одобрил моды', bulk_approve_versions: '✅ Массово одобрил версии',
+    approve_version: '✅ Одобрил версию', reject_version: '❌ Отклонил версию',
+    approve_bundle: '✅ Одобрил сборку', reject_bundle: '❌ Отклонил сборку',
+    hide_mod: '🙈 Скрыл мод', unhide_mod: '👁 Вернул мод из скрытых',
+    hide_bundle: '🙈 Скрыл сборку', unhide_bundle: '👁 Вернул сборку из скрытых',
+    delete_mod: '🗑 Удалил мод', delete_bundle: '🗑 Удалил сборку', delete_comment: '🗑 Удалил комментарий',
+    delete_via_complaint: '🗑 Удалил по жалобе', resolve_complaint: '✔ Закрыл жалобу',
+    regenerate_code: '🔄 Выдал новый код управления', edit_stats: '✏️ Поправил счётчики мода',
+    edit_tags: '🏷 Изменил теги',
+    ban_user: '⛔ Забанил аккаунт', unban_user: '✅ Разбанил аккаунт',
+    ban_ip: '⛔ Забанил IP', unban_ip: '✅ Разбанил IP',
+    create_admin: '👤 Создал админа', delete_admin: '👤 Удалил админа',
+    change_admin_role: '🎖 Сменил роль админа', reset_admin_password: '🔑 Сбросил пароль админа',
+  }; %>
+
+  <form method="get" action="/admin/log" class="log-filters">
+    <select name="actor">
+      <option value="">Все админы</option>
+      <% actors.forEach(a => { %><option value="<%= a %>" <%= a === actor ? 'selected' : '' %>><%= a %></option><% }) %>
+    </select>
+    <select name="action">
+      <option value="">Все действия</option>
+      <% actions.forEach(a => { %><option value="<%= a %>" <%= a === action ? 'selected' : '' %>><%= actionLabels[a] || a %></option><% }) %>
+    </select>
+    <input type="text" name="q" value="<%= q %>" placeholder="Поиск по объекту/деталям">
+    <button class="btn btn-primary btn-sm" type="submit">Найти</button>
+    <% if (actor || action || q) { %><a class="btn btn-ghost btn-sm" href="/admin/log">Сбросить</a><% } %>
+  </form>
+
+  <p class="hint">Найдено записей: <%= total %>. Страница <%= page %> из <%= pages %>.</p>
+
+  <% if (!entries.length) { %>
+    <p class="hint">Ничего не найдено.</p>
+  <% } else { %>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Когда</th><th>Кто</th><th>Действие</th><th>Объект</th><th>Детали</th></tr></thead>
+      <tbody>
+        <% entries.forEach(e => { %>
+        <tr>
+          <td class="hint" style="white-space:nowrap;"><%= e.created_at %></td>
+          <td><%= e.admin_name %></td>
+          <td><%= actionLabels[e.action] || e.action %></td>
+          <td><%= e.target || '—' %></td>
+          <td class="hint log-details"><%= e.details || '—' %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if (pages > 1) { %>
+    <div class="log-pager">
+      <% const qs = (p) => '/admin/log?' + new URLSearchParams({ actor, action, q, page: p }).toString(); %>
+      <% if (page > 1) { %><a class="btn btn-ghost btn-sm" href="<%= qs(page - 1) %>">← Новее</a><% } %>
+      <% if (page < pages) { %><a class="btn btn-ghost btn-sm" href="<%= qs(page + 1) %>">Старее →</a><% } %>
+    </div>
+  <% } %>
+  <% } %>
+</main>
+
+<%- include('../partials/footer') %>
+</body>
+</html>
