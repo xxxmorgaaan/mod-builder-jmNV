@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/header') %>
+<main class="container section">
+  <div class="empty-state">
+    <h1>⏳ Ещё на модерации</h1>
+    <p><b><%= mod.name %></b> пока проверяется администрацией и не показывается в общем каталоге.
+    Если это ваша публикация — ссылка на управление и код были показаны сразу после отправки.</p>
+    <a href="/manage.html" class="btn btn-ghost">Управление по коду</a>
+    <a href="/" class="btn btn-primary">На главную</a>
+  </div>
+</main>
+<%- include('partials/footer') %>
+</body>
+</html>

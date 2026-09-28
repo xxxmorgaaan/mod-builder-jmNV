@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<main class="container section">
+  <div class="empty-state">
+    <h1>Доступ закрыт</h1>
+    <p>Этот IP-адрес заблокирован администрацией сайта.</p>
+    <% if (reason) { %><p class="hint">Причина: <%= reason %></p><% } %>
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title><%= typeof title !== 'undefined' ? title : 'Alem Mod' %></title>
+<meta name="theme-color" content="#0B0D11">
+<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/img/favicon-180.png">
+<!-- Свой CSS — ПЕРВЫМ и обычным блокирующим <link>: шапка, нижнее меню и
+     остальной каркас страницы должны появиться сразу, не дожидаясь ответа
+     от fonts.googleapis.com (он бывает медленным, особенно на телефоне). -->
+<link rel="stylesheet" href="/css/style.css">
+<!-- Шрифты Google Fonts грузятся асинхронно (media="print", подмена на
+     "all" после загрузки) — они не блокируют первую отрисовку страницы,
+     текст просто показывается системным шрифтом и подменяется, когда
+     веб-шрифт будет готов. Раньше это была причина, из-за которой на
+     медленной сети вся страница (включая нижнее меню) как будто «не сразу»
+     появлялась — она ждала шрифты. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>

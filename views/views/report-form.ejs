@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><%- include('partials/head', { title }) %></head>
+<body>
+<%- include('partials/header') %>
+
+<main class="container section" style="max-width:560px;">
+  <h1>⚠ Пожаловаться</h1>
+  <p class="hint">На «<b><%= target.name %></b>». После отправки откроется переписка с администрацией — отвечать вам будут прямо там.</p>
+
+  <form method="post" action="/report/<%= type %>/<%= target.id %>" class="form-panel">
+    <div class="field">
+      <label>В чём проблема?</label>
+      <textarea name="body" required maxlength="3000" placeholder="Опишите, что не так — например, вирус в архиве, плагиат, оскорбительный контент."></textarea>
+    </div>
+    <button class="btn btn-primary btn-block" type="submit">Отправить жалобу</button>
+  </form>
+</main>
+
+<%- include('partials/footer') %>
+</body>
+</html>
